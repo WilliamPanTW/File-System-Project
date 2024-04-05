@@ -1,9 +1,9 @@
 /**************************************************************
-* Class::  CSC-415-0# Spring 2024
-* Name::
-* Student IDs::
-* GitHub-Name::
-* Group-Name::
+* Class::  CSC-415-01 Spring 2024
+* Name:: Pan William
+* Student IDs:: 922867228
+* GitHub-Name:: WilliamPanTW
+* Group-Name:: JMWT
 * Project:: Basic File System
 *
 * File:: fsShell.c
