@@ -29,7 +29,21 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	{
 	printf ("Initializing File System with %ld blocks with a block size of %ld\n", numberOfBlocks, blockSize);
 	/* TODO: Add any code you need to initialize your file system. */
+	
+	typedef struct vcb{
+    uint64_t block_size;		//Total Number of blocks
+	uint64_t block_index;		//number of free blocks in volume
+    
+	uint64_t free_block_size;	//Total number of free blocks(bitmap length)
+	uint64_t free_block_index;	//location of the free space in bitmap
+	
+	uint64_t root_dir_size;		//Total number  of the root directory 
+	uint64_t root_dir_index;	//Location of the root directory 
+	
+	uint64_t signature;			//Long type unique identify (8bytes) generate by magic number 
+	} vcb;
 
+	char * freespace;
 	return 0;
 	}
 	
