@@ -50,5 +50,11 @@ struct vcb
 	uint64_t signature;			//Long type unique identify (8bytes) generate by magic number 
 	} vcb;
 
+	void set_bit(char* bitmap, int position);
+	int get_bit(char* bitmap, int position);
+	void clear_bit(char* bitmap, int position);
+
+
+
 #endif
 
