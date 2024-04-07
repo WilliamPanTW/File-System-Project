@@ -26,9 +26,6 @@
 #include "mfs.h"
 #include "fsInit.h"
 
-char * freeSpace; //global VCB pointer 
-
-
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	{
 	printf ("Initializing File System with %ld blocks with a block size of %ld\n", numberOfBlocks, blockSize);
@@ -40,30 +37,19 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	//**************************VCB**************************//
 
 
-	//Malloc a Block of memory as your VCB pointer  
-	freeSpace = malloc(vcb.block_size * BLOCK_SIZE);
-
-
-	//Check if Signature is already initiallize or not 
+    // Check if the signature matches
 	if (vcb.signature == PART_SIGNATURE) {
         printf("Volume already initialized.\n");
-	}else{
-		vcb.signature = PART_SIGNATURE;
+		return 0; // Volume already initialized, return success
 	}
 	
    
 	//initialize value in Volume control block 
+	vcb.signature = PART_SIGNATURE;
 	vcb.block_size = numberOfBlocks;
 
 	//**************************FreeSpace**************************//
-
-	//Assign location and size to Volume Control Block
-    vcb.free_block_index = startBlock;
-    vcb.free_block_size = blocksNeeded;
-
-	//Assign vcb and freespace blocks as used
-    LBAwrite(freeSpace, blocksNeeded, startBlock);
-
+	//Malloc a Block of memory as your VCB pointer  
 
 	
 	//**************************Root**************************//
@@ -71,7 +57,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 
 
 
-	// write volume control block to disk
+	//**************************Write to Disk**************************//
 	LBAwrite(&vcb, 1, 0);
 	if (LBAread(&vcb, 1, 0) != 1) {
         printf("Failed to read first block.\n");
@@ -85,9 +71,6 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 void exitFileSystem ()
 	{
 
-	//Free bitmap
-    free(freeSpace);
-    freeSpace = NULL;
 
 
 	printf ("System exiting\n");

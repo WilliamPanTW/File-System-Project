@@ -38,6 +38,8 @@ struct dirEntry
 
 struct vcb
 	{
+	uint64_t signature;			//Long type unique identify (8bytes) generate by magic number 
+
     uint64_t block_size;		//Total Number of blocks
 	uint64_t block_index;		//number of free blocks in volume
     
@@ -46,8 +48,6 @@ struct vcb
 	
 	uint64_t root_dir_size;		//Total number  of the root directory 
 	uint64_t root_dir_index;	//Location of the root directory 
-	
-	uint64_t signature;			//Long type unique identify (8bytes) generate by magic number 
 	} vcb;
 
 	void set_bit(char* bitmap, int position);
