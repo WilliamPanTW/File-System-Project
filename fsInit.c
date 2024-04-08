@@ -54,6 +54,11 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
     }
 
 
+	//check empty 
+	int result = get_bit(fsmap, 5);
+	printf("myresult%d\n",result); //free as 0 and used as 1 
+
+	
 	//**************************Root**************************//
 
 
@@ -110,35 +115,28 @@ int initFreeSpace(uint64_t numberOfBlocks) {
 
 
 // Set the bit at a specific position in the bitmap
-void set_bit(char* bitmap, int position) {
-	    //fsmap[byte#]=fsmap[byte#]|(1<<bitmap)
-//Take byte and assign left shift byte
+void set_bit(char* fsmap, int block_number) {
+	printf("block:%d\n",block_number);
+    int byte_number= block_number / 8; // get the specific block byte(8 bits) index
+    int bit_number = block_number % 8; // remainder of the block number
+    fsmap[byte_number] |= (1 << bit_number); //set according to 1 as used
+	//Initial at block 0 fsmap will get 0x0001 and at block 3 fsmap 0x1111 
+}
 
-    int byte_position = position / 8; // Calculate byte position containing the bit
-    int bit_position = position % 8; // Calculate bit position within the byte
-    bitmap[byte_position] |= (128 >> bit_position); // OR operation to set the bit to 1
+
+// Clear the bit at a specific position in the bitmap
+void clear_bit(char* fsmap, int block_number) {
+     int byte_number= block_number / 8; // get the specific block byte(8 bits) index
+    int bit_number = block_number % 8; // remainder of the block number
+    int result = fsmap[byte_number] &= ~(1 << bit_number); 	//more efficent using bit operator 
+    //for example 0x1111 1111 by clear position 4 it bcome 0x1110 1111 
 }
 
 // Get the bit at a specific position in the bitmap
-int get_bit(char* bitmap, int position) {
-	     //fsmap[byte#]=fsmap[byte#]&(!(1<<bit#))
-
-    int byte_position = position / 8; // Calculate byte position containing the bit
-    int bit_position = position % 8; // Calculate bit position within byte
-    int x = bitmap[byte_position] & (128 >> bit_position);
-    if (x >= (128 >> bit_position)) {
-        return 1;
-    }
-    return 0;
-}
-
-// Clear the bit at a specific position in the bitmap
-void clear_bit(char* bitmap, int position) {
-    int byte_position = position / 8;
-    int bit_position = position % 8;
-    bitmap[byte_position] &= ~(128 >> bit_position); // AND operation with a mask to clear bit
-    //return (fsmap[byte#] & (1<<bit#)) OR return ((fsmap[byte#])>>bit#)&1) //indicate on zero right shift
-
+int get_bit(char* fsmap, int block_number) {
+    int byte_number= block_number / 8; // get the specific block byte(8 bits) index
+    int bit_number = block_number % 8; // remainder of the block number
+	return (fsmap[byte_number] >> bit_number) & 1;//indicate on zero right shift
 }
 
 
