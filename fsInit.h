@@ -34,7 +34,6 @@ struct dirEntry
 
     time_t createDate;           // integer or long depend on implementation
     time_t modifyDate;           // integer or long depend on implementation
-    time_t accessDate;          // integer or long depend on implementation
 	} dirEntry ;
 
 

@@ -156,6 +156,12 @@ int initRootDir(uint64_t entries_number) {
         return -1;
     }
 	dir[0].dirSize = dirEntryAmount; 
+   	// Get current time
+    time_t current_time;
+    time(&current_time);
+	// printf("current time is %ld second \n",current_time);
+    dir[0].createDate = current_time;
+    dir[0].modifyDate = current_time;
 
 	// durectiry entry zero , cd dot indicate current directory 
 	strcpy(dir[0].fileName, ".");
