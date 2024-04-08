@@ -51,12 +51,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	if (initFreeSpace(numberOfBlocks) == -1) {
         return -1; //fail to inital free space 
     }
-
-
-	// //check empty 
-	// int result = get_bit(fsmap, 5);
-	// printf("myresult%d\n",result); //free as 0 and used as 1 
-
+	
 
 	//**************************Root**************************//
 
@@ -73,7 +68,12 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
         printf("Failed to read first block.\n");
         return -1;
     }
-	
+	//int bitmap_state ;
+	// for(int i=0;i<=36;i++){
+	// 	 result = get_bit(fsmap, i);
+	// 	printf("bitmap index %d is %d\n",i,bitmap_state); //free as 0 and used as 1 
+	// } 
+
 	return 0;
 	}
 	
@@ -81,9 +81,12 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 void exitFileSystem ()
 	{
 
-	//Free bitmap
-    free(fsmap);
+	//Free pinter prevent memory leak  
+    free(fsmap); //bitmap
     fsmap = NULL;
+	
+	free(rootDir); // root pointer 
+    rootDir = NULL;
 
 	printf ("System exiting\n");
 	}
@@ -125,7 +128,7 @@ int initRootDir(uint64_t entries_number) {
     int block_num = (dirEntry_bytes + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; //floor operator (ex.6 blocks)
 	int block_byte  = block_num * MINBLOCKSIZE; // The actual size we can allocated by block (ex.3072 bytes)
 	// printf("\n block byte : %d",block_byte);
-	printf("\ndir entry size: %d",dirEntrySize);
+	// printf("\ndir entry size: %d",dirEntrySize);
 	int dirEntryAmount = block_byte / dirEntrySize; // result in less waste  (ex.3072/60 = 51 entries)
 	dirEntry_bytes = dirEntrySize * dirEntryAmount; // update the actual byte dirtory could allocate  (ex.60*51= 3060)
 	vcb.root_dir_size = block_num; // 0x1d 29 in block 1 (VCB)
@@ -169,7 +172,14 @@ int initRootDir(uint64_t entries_number) {
 
     // Write ROOT directory in number of block starting from index 
     LBAwrite(dir, block_num, startBlock);
-    
+	//Mark the block that is used 
+	for (int i = 0; i <= block_num; i++) {
+        set_bit(fsmap, (startBlock+i)); //from where it start with block is allocated 
+    }
+
+	free(dir);
+	dir=NULL;
+
     return 0;
 }
 
