@@ -69,11 +69,11 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
         printf("Failed to read first block.\n");
         return -1;
     }
-	// int bitmap_state ;
-	// for(int i=0;i<=36;i++){
-	// 	bitmap_state = get_bit(fsmap, i);
-	// 	printf("bitmap index %d is %d\n",i,bitmap_state); //free as 0 and used as 1 
-	// } 
+	int bitmap_state ;
+	for(int i=0;i<=36;i++){
+		bitmap_state = get_bit(fsmap, i);
+		printf("bitmap index %d is %d\n",i,bitmap_state); //free as 0 and used as 1 
+	} 
 
 	return 0;
 	}
@@ -114,14 +114,20 @@ int initFreeSpace(uint64_t numberOfBlocks) {
         set_bit(fsmap, i); 
     }
 
+	//inital vcb 
+    vcb.free_block_index = trackAndSetBit(fsmap, numberOfBlocks);
+	if (vcb.free_block_index == -1) {
+        printf("Failed to find a free block.\n");
+        return -1;
+    }
+
+	vcb.free_block_size = bitmap_needed_block;
+
     // write 5 blocks starting from block 1
     LBAwrite(fsmap, bitmap_needed_block, startBlock);
 
-	//inital vcb 
-    vcb.free_block_index = startBlock;
-	vcb.free_block_size = bitmap_needed_block;
 
-	printf("VCB return%d\n",startBlock);
+	// printf("VCB return%d\n",startBlock);
 	// Return number of the free space to the VCB init that called
 	return startBlock;
 }
@@ -139,9 +145,6 @@ int initRootDir(uint64_t entries_number) {
 	// printf("\ndirEntryAmount: %d",dirEntryAmount);
 	// printf("\nnew update byte of dir: %d",dirEntry_bytes);
 
-
-	int startBlock = 6; //VCB and bitmap take up 0-5 blocks ,thus start it at index 6
-	vcb.root_dir_index = startBlock; 
 	
 	// pointer to an array of directory entries
 	struct dirEntry* dir = malloc(block_byte); //ask free space system for 6 blocks
@@ -182,14 +185,31 @@ int initRootDir(uint64_t entries_number) {
 	// printf("starting from %d\n",startBlock);
 
     // Write ROOT directory in number of block starting from index 
-    LBAwrite(dir, block_num, startBlock);
-	//Mark the block that is used 
-	for (int i = 0; i <= block_num; i++) {
-        set_bit(fsmap, (startBlock+i)); //from where it start with block is allocated 
+    LBAwrite(dir, block_num, vcb.free_block_index);
+
+
+	// Set the bits for the blocks allocated for the root directory
+    for (int i = 0; i < block_num; i++) {
+        set_bit(fsmap, (vcb.free_block_index + i));
     }
+
+    // Update the free block index in VCB
+    vcb.free_block_index += block_num;
+	printf("root dir return free index:%ld \n", vcb.free_block_index);
 
 	free(dir);
     return 0;
+}
+
+int trackAndSetBit(char* fsmap, int numberOfBlocks) {
+    for (int i = 0; i < numberOfBlocks; i++) {
+        if (!get_bit(fsmap, i)) { // If the block is free
+            set_bit(fsmap, i); // Set the bit to indicate it's used
+            vcb.free_block_index = i; // Update the free block index in VCB
+            return i; // Return the index which is updated
+        }
+    }
+    return -1; // If no free block is found
 }
 
 

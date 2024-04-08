@@ -58,7 +58,7 @@ struct vcb
 	//**************************Helper function**************************//
 	int initFreeSpace(uint64_t numberOfBlocks);
 	int initRootDir(uint64_t numberOfBlocks);
-    int writeRootDirectory();
+	int trackAndSetBit(char* fsmap, int numberOfBlocks);
 
 	void set_bit(char* bitmap, int position);
 	int get_bit(char* bitmap, int position);
