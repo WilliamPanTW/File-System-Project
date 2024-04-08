@@ -68,9 +68,9 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
         printf("Failed to read first block.\n");
         return -1;
     }
-	//int bitmap_state ;
+	// int bitmap_state ;
 	// for(int i=0;i<=36;i++){
-	// 	 result = get_bit(fsmap, i);
+	// 	bitmap_state = get_bit(fsmap, i);
 	// 	printf("bitmap index %d is %d\n",i,bitmap_state); //free as 0 and used as 1 
 	// } 
 
@@ -104,6 +104,8 @@ int initFreeSpace(uint64_t numberOfBlocks) {
     	printf("fail to malloc free space map");
 		return -1; 
     }
+	// Initialize free space bitmap to all zeros
+    memset(fsmap, 0, bitmap_needed_block * MINBLOCKSIZE);
 
 	set_bit(fsmap, 0);//set block 0 in bitmap(fsmap) to 1(used)
 	//iterate to set the needed block for bitmap to allocate free space 
@@ -155,13 +157,14 @@ int initRootDir(uint64_t entries_number) {
     if (!rootDir) {
         return -1;
     }
-	dir[0].dirSize = dirEntryAmount; 
+
    	// Get current time
     time_t current_time;
     time(&current_time);
 	// printf("current time is %ld second \n",current_time);
     dir[0].createDate = current_time;
     dir[0].modifyDate = current_time;
+	dir[0].dirSize = dirEntryAmount; 
 
 	// durectiry entry zero , cd dot indicate current directory 
 	strcpy(dir[0].fileName, ".");
@@ -184,8 +187,6 @@ int initRootDir(uint64_t entries_number) {
     }
 
 	free(dir);
-	dir=NULL;
-
     return 0;
 }
 
