@@ -26,7 +26,6 @@
 #include "mfs.h"
 #include "fsInit.h"
 
-char * fsmap; //global unsign char fsmap pointer 
 
 
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
@@ -54,14 +53,22 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
     }
 
 
-	//check empty 
-	int result = get_bit(fsmap, 5);
-	printf("myresult%d\n",result); //free as 0 and used as 1 
+	// //check empty 
+	// int result = get_bit(fsmap, 5);
+	// printf("myresult%d\n",result); //free as 0 and used as 1 
 
-	
+
 	//**************************Root**************************//
 
 
+	if (initRootDir(MIN_DE) == -1) {
+        return -1; //fail to inital Root directory  
+    }
+
+	// Write the root directory to disk
+    if (writeRootDirectory() == -1) {
+        return -1; // Failed to write root directory
+    }
 
 
 	//**************************Write to Disk**************************//
@@ -91,19 +98,23 @@ int initFreeSpace(uint64_t numberOfBlocks) {
 
 	int startBlock = 1; //VCB take up block 0 we start it at index 1
 	int bytesNeeded = numberOfBlocks / 8; //1 bit per block (smallest addresable Byte)
-	int bitmap_needed_block = (bytesNeeded + (BLOCK_SIZE - 1)) / BLOCK_SIZE; // floor operation 
+	int bitmap_needed_block = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; // floor operation 
 	// printf("\ncechking : %d \n",bitmap_needed_block); //5 
 
-    fsmap = malloc(bitmap_needed_block * BLOCK_SIZE); // malloc the space needed ( 2560 bytes)
-
-	set_bit(fsmap, 0);
-    for (int i = 1; i <= bitmap_needed_block; i++) {
-        set_bit(fsmap, i);
+    fsmap = malloc(bitmap_needed_block * MINBLOCKSIZE); //bitmap space (512*5=2560 bytes)
+	if (!fsmap) { //fail to malloc free space map
+        return -1; 
     }
 
+	set_bit(fsmap, 0);//set block 0 in bitmap(fsmap) to 1(used)
+	//iterate to set the needed block for bitmap to allocate free space 
+    for (int i = 1; i <= bitmap_needed_block; i++) {
+        set_bit(fsmap, i); 
+    }
 
     // write 5 blocks starting from block 1
     LBAread(fsmap, vcb.free_block_size, vcb.free_block_index);
+
 
 	//Assign location and size to Volume Control Block
     vcb.free_block_size = bitmap_needed_block;
@@ -113,10 +124,47 @@ int initFreeSpace(uint64_t numberOfBlocks) {
 	return startBlock;
 }
 
+int initRootDir(uint64_t entries_number) {
+	int dirEntrySize = 60; // directory entry size
+    int bytesNeeded =  dirEntrySize * entries_number ; // byte needed for Root directory
+    int blocksNeeded = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; //floor operator
+	bytesNeeded = blocksNeeded * MINBLOCKSIZE; //update the actual size we allocated
+	int dirEntryAmount = bytesNeeded / dirEntrySize; // result in less waste  
+
+    //Allocate enough memory before proceeding
+    rootDir = malloc(vcb.root_dir_size * MINBLOCKSIZE);
+    if (!rootDir) {
+        return -1;
+    }
+	// pointer to an array of directory entries
+	struct dirEntry* dir = malloc(bytesNeeded);
+    if (!dir) {
+        printf("Directory failed to allocate memory.\n");
+        return -1;
+    }
+
+    // Initialize directory entries
+    for (int i = 0; i < dirEntryAmount; i++) {
+        dir[i].fileName[0] = '\0';
+    }
+
+
+    //If everything's successful, read in the necessary data
+    LBAread(rootDir, vcb.root_dir_size , vcb.root_dir_index);
+    
+    // //Keep track of the root and current working directories
+    // crntDir = rootDir;
+    return 0;
+}
+
+int writeRootDirectory() {
+    // Write the root directory to disk
+    return LBAwrite(rootDir, vcb.root_dir_size, vcb.root_dir_index);
+}
+
 
 // Set the bit at a specific position in the bitmap
 void set_bit(char* fsmap, int block_number) {
-	printf("block:%d\n",block_number);
     int byte_number= block_number / 8; // get the specific block byte(8 bits) index
     int bit_number = block_number % 8; // remainder of the block number
     fsmap[byte_number] |= (1 << bit_number); //set according to 1 as used
@@ -136,7 +184,7 @@ void clear_bit(char* fsmap, int block_number) {
 int get_bit(char* fsmap, int block_number) {
     int byte_number= block_number / 8; // get the specific block byte(8 bits) index
     int bit_number = block_number % 8; // remainder of the block number
-	return (fsmap[byte_number] >> bit_number) & 1;//indicate on zero right shift
+	return (fsmap[byte_number] >> bit_number) & 1;//retrieved used(1) or free(0) 
 }
 
 

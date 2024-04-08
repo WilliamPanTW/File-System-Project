@@ -18,12 +18,14 @@
 #include <stdint.h>
 #include <time.h>
 #define MAX_FILENAME_LENGTH 255
-#define BLOCK_SIZE 512
+#define MIN_DE 50
+char * fsmap; //global unsign char fsmap pointer 
+char * rootDir; //global unsign char fsmap pointer 
 
 
 struct dirEntry 
 	{
-    char filename[MAX_FILENAME_LENGTH];// char name size with null-terminator
+    char fileName[MAX_FILENAME_LENGTH];// char name size with null-terminator
 
     uint64_t location;               // long type of address(location)
 
@@ -56,7 +58,8 @@ struct vcb
 
 	//**************************Helper function**************************//
 	int initFreeSpace(uint64_t numberOfBlocks);
-
+	int initRootDir(uint64_t numberOfBlocks);
+    int writeRootDirectory();
 
 	void set_bit(char* bitmap, int position);
 	int get_bit(char* bitmap, int position);
