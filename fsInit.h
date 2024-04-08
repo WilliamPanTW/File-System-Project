@@ -54,6 +54,14 @@ struct vcb
 	int get_bit(char* bitmap, int position);
 	void clear_bit(char* bitmap, int position);
 
+	//**************************Helper function**************************//
+	int initFreeSpace(uint64_t numberOfBlocks);
+
+
+	void set_bit(char* bitmap, int position);
+	int get_bit(char* bitmap, int position);
+	void clear_bit(char* bitmap, int position);
+
 
 
 #endif
