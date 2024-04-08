@@ -102,8 +102,9 @@ int initFreeSpace(uint64_t numberOfBlocks) {
 	// printf("\ncechking : %d \n",bitmap_needed_block); //5 
 
     fsmap = malloc(bitmap_needed_block * MINBLOCKSIZE); //bitmap space (512*5=2560 bytes)
-	if (!fsmap) { //fail to malloc free space map
-        return -1; 
+	if (!fsmap) { 
+    	printf("fail to malloc free space map");
+		return -1; 
     }
 
 	set_bit(fsmap, 0);//set block 0 in bitmap(fsmap) to 1(used)
@@ -113,29 +114,28 @@ int initFreeSpace(uint64_t numberOfBlocks) {
     }
 
     // write 5 blocks starting from block 1
-    LBAread(fsmap, vcb.free_block_size, vcb.free_block_index);
+    LBAwrite(fsmap, bitmap_needed_block, startBlock);
 
 
-	//Assign location and size to Volume Control Block
-    vcb.free_block_size = bitmap_needed_block;
- 	vcb.free_block_index = startBlock;
+	//inital vcb 
+    vcb.free_block_index = startBlock;
+	vcb.free_block_size = bitmap_needed_block;
 
-
+	// Return number of the free space to the VCB init that called
 	return startBlock;
 }
 
 int initRootDir(uint64_t entries_number) {
-	int dirEntrySize = 60; // directory entry size
+	int dirEntrySize = sizeof(struct dirEntry); // directory entry size
     int bytesNeeded =  dirEntrySize * entries_number ; // byte needed for Root directory
     int blocksNeeded = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; //floor operator
 	bytesNeeded = blocksNeeded * MINBLOCKSIZE; //update the actual size we allocated
 	int dirEntryAmount = bytesNeeded / dirEntrySize; // result in less waste  
+	vcb.root_dir_size = blocksNeeded;
+	vcb.root_dir_index = 6; //??
 
-    //Allocate enough memory before proceeding
-    rootDir = malloc(vcb.root_dir_size * MINBLOCKSIZE);
-    if (!rootDir) {
-        return -1;
-    }
+
+	
 	// pointer to an array of directory entries
 	struct dirEntry* dir = malloc(bytesNeeded);
     if (!dir) {
@@ -152,12 +152,16 @@ int initRootDir(uint64_t entries_number) {
     //If everything's successful, read in the necessary data
     LBAread(rootDir, vcb.root_dir_size , vcb.root_dir_index);
     
-    // //Keep track of the root and current working directories
-    // crntDir = rootDir;
     return 0;
 }
 
 int writeRootDirectory() {
+	//Allocate enough memory before proceeding
+    rootDir = malloc(vcb.root_dir_size * MINBLOCKSIZE);
+    if (!rootDir) {
+        return -1;
+    }
+
     // Write the root directory to disk
     return LBAwrite(rootDir, vcb.root_dir_size, vcb.root_dir_index);
 }
