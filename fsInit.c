@@ -44,11 +44,12 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	
 	//initialize value in Volume control block 
 	vcb.signature = PART_SIGNATURE; 
-	vcb.block_size = numberOfBlocks; //19531
-
+	vcb.block_index = numberOfBlocks; //19531
+	vcb.block_size = numberOfBlocks*MINBLOCKSIZE; // capacity or size of the storage 9,999,872 byte
 	//**************************FreeSpace**************************//
 
 	if (initFreeSpace(numberOfBlocks) == -1) {
+
         return -1; //fail to inital free space 
     }
 	
@@ -120,6 +121,7 @@ int initFreeSpace(uint64_t numberOfBlocks) {
     vcb.free_block_index = startBlock;
 	vcb.free_block_size = bitmap_needed_block;
 
+	printf("VCB return%d\n",startBlock);
 	// Return number of the free space to the VCB init that called
 	return startBlock;
 }

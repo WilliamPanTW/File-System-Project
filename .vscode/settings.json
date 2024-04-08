@@ -4,6 +4,7 @@
         "stdlib.h": "c",
         "stdio.h": "c",
         "time.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "fsinit.h": "c"
     }
 }

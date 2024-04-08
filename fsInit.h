@@ -41,14 +41,14 @@ struct vcb
 	{
 	uint64_t signature;			//Long type unique identify (8bytes) generate by magic number 
 
-    uint64_t block_size;		//Total Number of blocks
-	uint64_t block_index;		//number of free blocks in volume
+	uint64_t block_index;		//number of blocks in volume
+    uint64_t block_size;		//capacity or size of the storage
     
-	uint64_t free_block_size;	//Total number of free blocks(bitmap length)
 	uint64_t free_block_index;	//location of the free space in bitmap
+	uint64_t free_block_size;	//Total number of free blocks(bitmap length)
 	
-	uint64_t root_dir_size;		//Total number of the root directory 
 	uint64_t root_dir_index;	//Location of the root directory 
+	uint64_t root_dir_size;		//Total number of the root directory 
 	} vcb;
 
 	void set_bit(char* bitmap, int position);
