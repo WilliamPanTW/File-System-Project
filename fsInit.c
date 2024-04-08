@@ -65,11 +65,6 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
         return -1; //fail to inital Root directory  
     }
 
-	// Write the root directory to disk
-    if (writeRootDirectory() == -1) {
-        return -1; // Failed to write root directory
-    }
-
 
 	//**************************Write to Disk**************************//
 	// write 1 blocks starting from block 0
@@ -96,7 +91,7 @@ void exitFileSystem ()
 	//**************************Helper function**************************//
 int initFreeSpace(uint64_t numberOfBlocks) {
 
-	int startBlock = 1; //VCB take up block 0 we start it at index 1
+	int startBlock = 1; //VCB take up block 0,thus start it at index 1
 	int bytesNeeded = numberOfBlocks / 8; //1 bit per block (smallest addresable Byte)
 	int bitmap_needed_block = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; // floor operation 
 	// printf("\ncechking : %d \n",bitmap_needed_block); //5 
@@ -125,19 +120,24 @@ int initFreeSpace(uint64_t numberOfBlocks) {
 }
 
 int initRootDir(uint64_t entries_number) {
-	int dirEntrySize = sizeof(struct dirEntry); // directory entry size
-    int bytesNeeded =  dirEntrySize * entries_number ; // byte needed for Root directory
-    int blocksNeeded = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; //floor operator
-	bytesNeeded = blocksNeeded * MINBLOCKSIZE; //update the actual size we allocated
-	// printf("\nbyte needed: %d",bytesNeeded);
-	// printf("\ndir entry size: %d",dirEntrySize);
-	int dirEntryAmount = bytesNeeded / dirEntrySize; // result in less waste  (ex.51)
-	vcb.root_dir_size = dirEntryAmount; 
-	// printf("root_dir: %d",dirEntryAmount);
-	// vcb.root_dir_index = 6; 
+	int dirEntrySize = sizeof(struct dirEntry); // directory entry size (ex.60 bytes)
+    int dirEntry_bytes =  dirEntrySize * entries_number ; // byte needed for Root directory (ex.3000 bytes)
+    int block_num = (dirEntry_bytes + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; //floor operator (ex.6 blocks)
+	int block_byte  = block_num * MINBLOCKSIZE; // The actual size we can allocated by block (ex.3072 bytes)
+	// printf("\n block byte : %d",block_byte);
+	printf("\ndir entry size: %d",dirEntrySize);
+	int dirEntryAmount = block_byte / dirEntrySize; // result in less waste  (ex.3072/60 = 51 entries)
+	dirEntry_bytes = dirEntrySize * dirEntryAmount; // update the actual byte dirtory could allocate  (ex.60*51= 3060)
+	vcb.root_dir_size = block_num; // 0x1d 29 in block 1 (VCB)
+	// printf("\ndirEntryAmount: %d",dirEntryAmount);
+	// printf("\nnew update byte of dir: %d",dirEntry_bytes);
+
+
+	int startBlock = 6; //VCB and bitmap take up 0-5 blocks ,thus start it at index 6
+	vcb.root_dir_index = startBlock; 
 	
 	// pointer to an array of directory entries
-	struct dirEntry* dir = malloc(bytesNeeded);
+	struct dirEntry* dir = malloc(block_byte); //ask free space system for 6 blocks
     if (!dir) {
         printf("Directory failed to allocate memory.\n");
         return -1;
@@ -147,22 +147,30 @@ int initRootDir(uint64_t entries_number) {
     for (int i = 0; i < dirEntryAmount; i++) {
         dir[i].fileName[0] = '\0';
     }
-
-
-    LBAread(rootDir, vcb.root_dir_size , vcb.root_dir_index);
-    
-    return 0;
-}
-
-int writeRootDirectory() {
-	//Allocate enough memory before proceeding
-    rootDir = malloc(vcb.root_dir_size * MINBLOCKSIZE);
+	// Actual directory entry of root 
+ 	rootDir = malloc(dirEntry_bytes);
     if (!rootDir) {
         return -1;
     }
+	dir[0].dirSize = dirEntryAmount; 
 
-    // Write the root directory to disk
-    return LBAwrite(rootDir, vcb.root_dir_size, vcb.root_dir_index);
+	// durectiry entry zero , cd dot indicate current directory 
+	strcpy(dir[0].fileName, ".");
+	dir[0].isDirectory = 1; //Root is a directory
+
+
+	//Root Directory entry one, cd dot dot should point itself
+	strcpy(dir[1].fileName, "..");
+	dir[1].isDirectory = 1; //Root is a directory
+
+	// printf("init root dir\n");
+	// printf("write %d blocks\n",block_num);
+	// printf("starting from %d\n",startBlock);
+
+    // Write ROOT directory in number of block starting from index 
+    LBAwrite(dir, block_num, startBlock);
+    
+    return 0;
 }
 
 
