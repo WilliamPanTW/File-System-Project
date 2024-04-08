@@ -101,7 +101,7 @@ int initFreeSpace(uint64_t numberOfBlocks) {
 	int bitmap_needed_block = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; // floor operation 
 	// printf("\ncechking : %d \n",bitmap_needed_block); //5 
 
-    fsmap = malloc(bitmap_needed_block * MINBLOCKSIZE); //bitmap space (512*5=2560 bytes)
+    fsmap = malloc(bitmap_needed_block * MINBLOCKSIZE); //bitmap space (5*512=2560 bytes)
 	if (!fsmap) { 
     	printf("fail to malloc free space map");
 		return -1; 
@@ -116,7 +116,6 @@ int initFreeSpace(uint64_t numberOfBlocks) {
     // write 5 blocks starting from block 1
     LBAwrite(fsmap, bitmap_needed_block, startBlock);
 
-
 	//inital vcb 
     vcb.free_block_index = startBlock;
 	vcb.free_block_size = bitmap_needed_block;
@@ -130,11 +129,12 @@ int initRootDir(uint64_t entries_number) {
     int bytesNeeded =  dirEntrySize * entries_number ; // byte needed for Root directory
     int blocksNeeded = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; //floor operator
 	bytesNeeded = blocksNeeded * MINBLOCKSIZE; //update the actual size we allocated
-	int dirEntryAmount = bytesNeeded / dirEntrySize; // result in less waste  
-	vcb.root_dir_size = blocksNeeded;
-	vcb.root_dir_index = 6; //??
-
-
+	// printf("\nbyte needed: %d",bytesNeeded);
+	// printf("\ndir entry size: %d",dirEntrySize);
+	int dirEntryAmount = bytesNeeded / dirEntrySize; // result in less waste  (ex.51)
+	vcb.root_dir_size = dirEntryAmount; 
+	// printf("root_dir: %d",dirEntryAmount);
+	// vcb.root_dir_index = 6; 
 	
 	// pointer to an array of directory entries
 	struct dirEntry* dir = malloc(bytesNeeded);
@@ -149,7 +149,6 @@ int initRootDir(uint64_t entries_number) {
     }
 
 
-    //If everything's successful, read in the necessary data
     LBAread(rootDir, vcb.root_dir_size , vcb.root_dir_index);
     
     return 0;
@@ -172,7 +171,7 @@ void set_bit(char* fsmap, int block_number) {
     int byte_number= block_number / 8; // get the specific block byte(8 bits) index
     int bit_number = block_number % 8; // remainder of the block number
     fsmap[byte_number] |= (1 << bit_number); //set according to 1 as used
-	//Initial at block 0 fsmap will get 0x0001 and at block 3 fsmap 0x1111 
+	//Initial at block 0 fsmap will get 0x0001 and at block 3 fsmap 0x1111
 }
 
 
