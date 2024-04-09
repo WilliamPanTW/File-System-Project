@@ -122,8 +122,7 @@ int initFreeSpace(uint64_t numberOfBlocks) {
     }
 
 	vcb.free_block_size = bitmap_needed_block;
-
-    // write 5 blocks starting from block 1
+    // write 5 blocks starting from block 1 //update bitmap 
     LBAwrite(fsmap, bitmap_needed_block, startBlock);
 
 
@@ -142,6 +141,7 @@ int initRootDir(uint64_t entries_number) {
 	int dirEntryAmount = block_byte / dirEntrySize; // result in less waste  (ex.3072/60 = 51 entries)
 	dirEntry_bytes = dirEntrySize * dirEntryAmount; // update the actual byte dirtory could allocate  (ex.60*51= 3060)
 	vcb.root_dir_size = block_num; // 0x1d 29 in block 1 (VCB)
+	vcb.root_dir_index = vcb.free_block_index; //set root index only when inital 
 	// printf("\ndirEntryAmount: %d",dirEntryAmount);
 	// printf("\nnew update byte of dir: %d",dirEntry_bytes);
 
@@ -195,7 +195,9 @@ int initRootDir(uint64_t entries_number) {
 
     // Update the free block index in VCB
     vcb.free_block_index += block_num;
-	printf("root dir return free index:%ld \n", vcb.free_block_index);
+	// printf("root dir return free index:%ld \n", vcb.free_block_index);//35
+	// Update and write to disk amount of block that used. 
+	// LBAwrite(fsmap, 28, 1);
 
 	free(dir);
     return 0;
