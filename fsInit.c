@@ -69,11 +69,11 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
         printf("Failed to read first block.\n");
         return -1;
     }
-	int bitmap_state ;
-	for(int i=0;i<=36;i++){
-		bitmap_state = get_bit(fsmap, i);
-		printf("bitmap index %d is %d\n",i,bitmap_state); //free as 0 and used as 1 
-	} 
+	// int bitmap_state ;
+	// for(int i=0;i<=36;i++){
+	// 	bitmap_state = get_bit(fsmap, i);
+	// 	printf("bitmap index %d is %d\n",i,bitmap_state); //free as 0 and used as 1 
+	// } 
 
 	return 0;
 	}
