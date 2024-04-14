@@ -25,6 +25,7 @@
 #include "fsLow.h"
 #include "mfs.h"
 #include "fsInit.h"
+#define vcbSIG 0x7760602795671593
 
 
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
@@ -36,13 +37,13 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 
 	VCB= malloc(MINBLOCKSIZE * sizeof(struct vcb));
     // Check if the signature matches
-	if (VCB->signature == PART_SIGNATURE) {
+	if (VCB->signature == vcbSIG) {
         printf("Volume already initialized.\n");
 		return 0; // Volume already initialized, return success
 	}
 	
 	//initialize value in Volume control block 
-	VCB->signature = PART_SIGNATURE; 
+	VCB->signature = vcbSIG; 
 	VCB->block_index = numberOfBlocks; //19531
 	VCB->block_size = numberOfBlocks*MINBLOCKSIZE; // capacity or size of the storage 9,999,872 byte
 	//**************************FreeSpace**************************//
@@ -80,13 +81,15 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	
 void exitFileSystem ()
 	{
-
 	//Free pinter prevent memory leak  
     free(fsmap); //bitmap
     fsmap = NULL;
 	
 	free(rootDir); // root pointer 
     rootDir = NULL;
+
+	free(VCB);
+    VCB = NULL;
 
 	printf ("System exiting\n");
 	}
