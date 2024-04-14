@@ -42,7 +42,6 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	//**************************FreeSpace**************************//
 
 	if (initFreeSpace(numberOfBlocks) == -1) {
-
         return -1; //fail to inital free space 
     }
 	
@@ -62,6 +61,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
         printf("Failed to read first block.\n");
         return -1;
     }
+
 	// int bitmap_state ;
 	// for(int i=0;i<=36;i++){
 	// 	bitmap_state = get_bit(fsmap, i);
@@ -110,8 +110,7 @@ int initVolumeControlBlock(uint64_t numberOfBlocks){
 }
 
 int initFreeSpace(uint64_t numberOfBlocks) {
-
-	int startBlock = 1; //VCB take up block 0,thus start it at index 1
+	int startBlock;
 	int bytesNeeded = numberOfBlocks / 8; //1 bit per block (smallest addresable Byte)
 	int bitmap_needed_block = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; // floor operation 
 	// printf("\ncechking : %d \n",bitmap_needed_block); //5 
@@ -119,27 +118,28 @@ int initFreeSpace(uint64_t numberOfBlocks) {
     fsmap = malloc(bitmap_needed_block * MINBLOCKSIZE); //bitmap space (5*512=2560 bytes)
 	if (!fsmap) { 
     	printf("fail to malloc free space map");
+		free(fsmap);
+		fsmap=NULL;
 		return -1; 
     }
-	// Initialize free space bitmap to all zeros
+	// Initialize free space to all zeros as free in bitmap
     memset(fsmap, 0, bitmap_needed_block * MINBLOCKSIZE);
 
-	set_bit(fsmap, 0);//set block 0 in bitmap(fsmap) to 1(used)
+	set_bit(fsmap, 0);//set block 0 in bitmap(fsmap) to 1(used) for VCB
 	//iterate to set the needed block for bitmap to allocate free space 
     for (int i = 1; i <= bitmap_needed_block; i++) {
         set_bit(fsmap, i); 
     }
 
 	//inital vcb 
-    VCB->free_block_index = trackAndSetBit(fsmap, numberOfBlocks);
+    VCB->free_block_index = trackAndSetBit(fsmap, numberOfBlocks); //update free space index
 	if (VCB->free_block_index == -1) {
         printf("Failed to find a free block.\n");
         return -1;
     }
 
-	VCB->free_block_size = bitmap_needed_block;
-    // write 5 blocks starting from block 1 //update bitmap 
-    LBAwrite(fsmap, bitmap_needed_block, startBlock);
+    // write 5 blocks starting from block 1 //update bitmap buffer
+    LBAwrite(fsmap, bitmap_needed_block, BITMAP_POSITION); 
 
 
 	// printf("VCB return%d\n",startBlock);
@@ -156,7 +156,7 @@ int initRootDir(uint64_t entries_number) {
 	// printf("\ndir entry size: %d",dirEntrySize);
 	int dirEntryAmount = block_byte / dirEntrySize; // result in less waste  (ex.3072/60 = 51 entries)
 	dirEntry_bytes = dirEntrySize * dirEntryAmount; // update the actual byte dirtory could allocate  (ex.60*51= 3060)
-	VCB->root_dir_size = block_num; // 0x1d 29 in block 1 (VCB)
+	VCB->root_dir_size = block_num; // amount of blocks of Root Dir 
 	VCB->root_dir_index = VCB->free_block_index; //set root index only when inital 
 	// printf("\ndirEntryAmount: %d",dirEntryAmount);
 	// printf("\nnew update byte of dir: %d",dirEntry_bytes);
@@ -208,12 +208,11 @@ int initRootDir(uint64_t entries_number) {
     for (int i = 0; i < block_num; i++) {
         set_bit(fsmap, (VCB->free_block_index + i));
     }
-
+	LBAwrite(fsmap,block_num, BITMAP_POSITION); // write back how much block is use
     // Update the free block index in VCB
     VCB->free_block_index += block_num;
 	// printf("root dir return free index:%ld \n", vcb.free_block_index);//35
 	// Update and write to disk amount of block that used. 
-	// LBAwrite(fsmap, 28, 1);
 
 	free(dir);
     return 0;

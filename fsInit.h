@@ -19,6 +19,7 @@
 #include <time.h>
 #define MAX_FILENAME_LENGTH 255
 #define MIN_DE 50
+#define BITMAP_POSITION 1 ///VCB take up block 0,thus start it at index 1
 char * fsmap; //global unsign char fsmap pointer 
 char * rootDir; //global unsign char fsmap pointer 
 
@@ -34,7 +35,7 @@ struct dirEntry
 
     time_t createDate;           // integer or long depend on implementation
     time_t modifyDate;           // integer or long depend on implementation
-	} dirEntry ;
+};
 
 
 struct vcb
