@@ -35,17 +35,10 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 
 	//**************************VCB**************************//
 
-	VCB= malloc(MINBLOCKSIZE * sizeof(struct vcb));
-    // Check if the signature matches
-	if (VCB->signature == vcbSIG) {
-        printf("Volume already initialized.\n");
-		return 0; // Volume already initialized, return success
-	}
-	
-	//initialize value in Volume control block 
-	VCB->signature = vcbSIG; 
-	VCB->block_index = numberOfBlocks; //19531
-	VCB->block_size = numberOfBlocks*MINBLOCKSIZE; // capacity or size of the storage 9,999,872 byte
+	if (initVolumeControlBlock(numberOfBlocks) == -1) {
+        return -1; //fail to init Volume Control Block
+    }
+
 	//**************************FreeSpace**************************//
 
 	if (initFreeSpace(numberOfBlocks) == -1) {
@@ -95,6 +88,27 @@ void exitFileSystem ()
 	}
 
 	//**************************Helper function**************************//
+int initVolumeControlBlock(uint64_t numberOfBlocks){
+	VCB= malloc(MINBLOCKSIZE * sizeof(struct vcb));
+    // Check if the signature matches
+	if (VCB->signature == vcbSIG) {
+        printf("Volume already initialized.\n");
+		return 0; // Volume already initialized, return success
+	}
+	//initialize value in Volume control block 
+	VCB->signature = vcbSIG; 
+	VCB->block_index = 0; //location of the  
+	VCB->block_size = numberOfBlocks; //amount of block size
+
+	if (LBAread(VCB, 1, 0) != 1) {
+		printf("Failed to read first block.\n");
+		free(VCB);
+    	VCB = NULL;
+		return -1;
+	}
+
+}
+
 int initFreeSpace(uint64_t numberOfBlocks) {
 
 	int startBlock = 1; //VCB take up block 0,thus start it at index 1

@@ -58,6 +58,7 @@ struct vcb
 	void clear_bit(char* bitmap, int position);
 
 	//**************************Helper function**************************//
+	int initVolumeControlBlock(uint64_t numberOfBlocks);
 	int initFreeSpace(uint64_t numberOfBlocks);
 	int initRootDir(uint64_t numberOfBlocks);
 	int trackAndSetBit(char* fsmap, int numberOfBlocks);
