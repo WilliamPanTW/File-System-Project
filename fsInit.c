@@ -27,7 +27,6 @@
 #include "fsInit.h"
 
 
-
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	{
 	printf ("Initializing File System with %ld blocks with a block size of %ld\n", numberOfBlocks, blockSize);
@@ -35,17 +34,17 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 
 	//**************************VCB**************************//
 
-
+	VCB= malloc(MINBLOCKSIZE * sizeof(struct vcb));
     // Check if the signature matches
-	if (vcb.signature == PART_SIGNATURE) {
+	if (VCB->signature == PART_SIGNATURE) {
         printf("Volume already initialized.\n");
 		return 0; // Volume already initialized, return success
 	}
 	
 	//initialize value in Volume control block 
-	vcb.signature = PART_SIGNATURE; 
-	vcb.block_index = numberOfBlocks; //19531
-	vcb.block_size = numberOfBlocks*MINBLOCKSIZE; // capacity or size of the storage 9,999,872 byte
+	VCB->signature = PART_SIGNATURE; 
+	VCB->block_index = numberOfBlocks; //19531
+	VCB->block_size = numberOfBlocks*MINBLOCKSIZE; // capacity or size of the storage 9,999,872 byte
 	//**************************FreeSpace**************************//
 
 	if (initFreeSpace(numberOfBlocks) == -1) {
@@ -64,8 +63,8 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 
 	//**************************Write to Disk**************************//
 	// write 1 blocks starting from block 0
-	LBAwrite(&vcb, 1, 0);
-	if (LBAread(&vcb, 1, 0) != 1) {
+	LBAwrite(VCB, 1, 0);
+	if (LBAread(VCB, 1, 0) != 1) {
         printf("Failed to read first block.\n");
         return -1;
     }
@@ -115,13 +114,13 @@ int initFreeSpace(uint64_t numberOfBlocks) {
     }
 
 	//inital vcb 
-    vcb.free_block_index = trackAndSetBit(fsmap, numberOfBlocks);
-	if (vcb.free_block_index == -1) {
+    VCB->free_block_index = trackAndSetBit(fsmap, numberOfBlocks);
+	if (VCB->free_block_index == -1) {
         printf("Failed to find a free block.\n");
         return -1;
     }
 
-	vcb.free_block_size = bitmap_needed_block;
+	VCB->free_block_size = bitmap_needed_block;
     // write 5 blocks starting from block 1 //update bitmap 
     LBAwrite(fsmap, bitmap_needed_block, startBlock);
 
@@ -140,8 +139,8 @@ int initRootDir(uint64_t entries_number) {
 	// printf("\ndir entry size: %d",dirEntrySize);
 	int dirEntryAmount = block_byte / dirEntrySize; // result in less waste  (ex.3072/60 = 51 entries)
 	dirEntry_bytes = dirEntrySize * dirEntryAmount; // update the actual byte dirtory could allocate  (ex.60*51= 3060)
-	vcb.root_dir_size = block_num; // 0x1d 29 in block 1 (VCB)
-	vcb.root_dir_index = vcb.free_block_index; //set root index only when inital 
+	VCB->root_dir_size = block_num; // 0x1d 29 in block 1 (VCB)
+	VCB->root_dir_index = VCB->free_block_index; //set root index only when inital 
 	// printf("\ndirEntryAmount: %d",dirEntryAmount);
 	// printf("\nnew update byte of dir: %d",dirEntry_bytes);
 
@@ -185,16 +184,16 @@ int initRootDir(uint64_t entries_number) {
 	// printf("starting from %d\n",startBlock);
 
     // Write ROOT directory in number of block starting from index 
-    LBAwrite(dir, block_num, vcb.free_block_index);
+    LBAwrite(dir, block_num, VCB->free_block_index);
 
 
 	// Set the bits for the blocks allocated for the root directory
     for (int i = 0; i < block_num; i++) {
-        set_bit(fsmap, (vcb.free_block_index + i));
+        set_bit(fsmap, (VCB->free_block_index + i));
     }
 
     // Update the free block index in VCB
-    vcb.free_block_index += block_num;
+    VCB->free_block_index += block_num;
 	// printf("root dir return free index:%ld \n", vcb.free_block_index);//35
 	// Update and write to disk amount of block that used. 
 	// LBAwrite(fsmap, 28, 1);
@@ -207,7 +206,7 @@ int trackAndSetBit(char* fsmap, int numberOfBlocks) {
     for (int i = 0; i < numberOfBlocks; i++) {
         if (!get_bit(fsmap, i)) { // If the block is free
             set_bit(fsmap, i); // Set the bit to indicate it's used
-            vcb.free_block_index = i; // Update the free block index in VCB
+            VCB->free_block_index = i; // Update the free block index in VCB
             return i; // Return the index which is updated
         }
     }

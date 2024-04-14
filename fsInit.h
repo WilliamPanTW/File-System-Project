@@ -49,7 +49,9 @@ struct vcb
 	
 	uint64_t root_dir_index;	//Location of the root directory 
 	uint64_t root_dir_size;		//Total number of the root directory 
-	} vcb;
+} ;
+
+	struct vcb *VCB;
 
 	void set_bit(char* bitmap, int position);
 	int get_bit(char* bitmap, int position);
