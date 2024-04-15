@@ -60,7 +60,11 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	// 	bitmap_status = get_bit(fsmap, i);
 	// 	printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
 	// } 
-
+	// write 1 blocks starting from block 0 after All initialize 
+	if (LBAwrite(VCB, 1, 0) != 1) {
+        printf("Failed to write Volume contorl block.\n");
+        return -1;
+    }
 	return 0;
 	}
 	
@@ -95,14 +99,8 @@ int initVolumeControlBlock(uint64_t numberOfBlocks){
 
 	//initialize value in Volume control block 
 	VCB->signature = vcbSIG; 
-	VCB->block_index = 0; //location of the  
+	VCB->block_index = 0; //location of the VCB
 	VCB->block_size = numberOfBlocks; //amount of block size
-
-	// write 1 blocks starting from block 0
-	if (LBAwrite(VCB, 1, 0) != 1) {
-        printf("Failed to write Volume contorl block.\n");
-        return -1;
-    }
 }
 
 int initFreeSpace(uint64_t numberOfBlocks) {
@@ -127,19 +125,21 @@ int initFreeSpace(uint64_t numberOfBlocks) {
     }
 
 	//inital vcb 
-    VCB->free_block_index = trackAndSetBit(fsmap, numberOfBlocks); //update free space index
-	if (VCB->free_block_index == -1) {
+	VCB->free_block_index = BITMAP_POSITION;
+	VCB->free_block_size=bitmap_needed_block;
+    trackAndSetBit(fsmap, numberOfBlocks); //update free space index
+	if (VCB->free_block_size == -1) {
         printf("Failed to find a free block.\n");
         return -1;
     }
 
     // write 5 blocks starting from block 1 
-	printf("Fsmap write %d blocks in position %d\n",bitmap_needed_block,BITMAP_POSITION);
+	// printf("Fsmap write %d blocks in position %d\n",bitmap_needed_block,BITMAP_POSITION);
     LBAwrite(fsmap, bitmap_needed_block, BITMAP_POSITION); 
 
 	// printf("VCB return%d\n",startBlock);
 	// Return number of the free space to the VCB init that called
-	return VCB->free_block_index;
+	return BITMAP_POSITION;
 }
 
 int initRootDir(uint64_t entries_number) {
@@ -169,9 +169,9 @@ int initRootDir(uint64_t entries_number) {
 		time_t current_time;
 		time(&current_time);
 		strcpy(dirEntries[i].fileName, ""); // Null terminated  
-		dirEntries[i].location = 0;
+		dirEntries[i].location = VCB->root_dir_index ;
 		dirEntries[i].isDirectory = 0;
-		dirEntries[i].dirSize = dirEntry_bytes;
+		dirEntries[i].dirSize = dirEntryAmount;
 		dirEntries[i].createDate = current_time;
 		dirEntries[i].modifyDate = current_time;
 	}
@@ -185,7 +185,7 @@ int initRootDir(uint64_t entries_number) {
 	dirEntries[1].isDirectory = 1; //Root is a directory
 
     // Write ROOT directory in number of block starting after bitmap block
-    LBAwrite(dirEntries, block_num, VCB->free_block_index);
+    LBAwrite(dirEntries, VCB->root_dir_size, VCB->root_dir_index);
 	free(dirEntries);
 	dirEntries= NULL;
 
