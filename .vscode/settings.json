@@ -5,6 +5,7 @@
         "stdio.h": "c",
         "time.h": "c",
         "stdint.h": "c",
-        "fsinit.h": "c"
+        "fsinit.h": "c",
+        "mfs.h": "c"
     }
 }

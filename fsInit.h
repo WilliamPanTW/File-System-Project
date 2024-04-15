@@ -21,8 +21,6 @@
 #define MIN_DE 50
 #define BITMAP_POSITION 1 ///VCB take up block 0,thus start it at index 1
 char * fsmap; //global unsign char fsmap pointer 
-char * rootDir; //global unsign char fsmap pointer 
-
 
 struct dirEntry 
 	{
@@ -63,6 +61,7 @@ struct vcb
 	int initFreeSpace(uint64_t numberOfBlocks);
 	int initRootDir(uint64_t numberOfBlocks);
 	int trackAndSetBit(char* fsmap, int numberOfBlocks);
+	void updateFreeSpace(int block_num);
 
 	void set_bit(char* bitmap, int position);
 	int get_bit(char* bitmap, int position);
