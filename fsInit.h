@@ -20,7 +20,6 @@
 #define MAX_FILENAME_LENGTH 255
 #define MIN_DE 50
 #define BITMAP_POSITION 1 ///VCB take up block 0,thus start it at index 1
-char * fsmap; //global unsign char fsmap pointer 
 
 struct dirEntry 
 	{
@@ -51,6 +50,7 @@ struct vcb
 } ;
 
 	struct vcb *VCB;
+	char * fsmap; //global unsign char fsmap pointer 
 
 	void set_bit(char* bitmap, int position);
 	int get_bit(char* bitmap, int position);

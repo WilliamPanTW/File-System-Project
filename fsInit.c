@@ -49,17 +49,17 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	//**************************Root**************************//
 
 
-	// if (initRootDir(MIN_DE) == -1) {
-    //     return -1; //fail to inital Root directory  
-    // }
+	if (initRootDir(MIN_DE) == -1) {
+        return -1; //fail to inital Root directory  
+    }
 
 
 	//**************************Check**************************//
-	int bitmap_status ;
-	for(int i=0;i<=36;i++){
-		bitmap_status = get_bit(fsmap, i);
-		printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
-	} 
+	// int bitmap_status ;
+	// for(int i=0;i<=36;i++){
+	// 	bitmap_status = get_bit(fsmap, i);
+	// 	printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
+	// } 
 
 	return 0;
 	}
@@ -134,9 +134,8 @@ int initFreeSpace(uint64_t numberOfBlocks) {
     }
 
     // write 5 blocks starting from block 1 
-	// printf("Fsmap write %d blocks in position %d\n",bitmap_needed_block,BITMAP_POSITION);
+	printf("Fsmap write %d blocks in position %d\n",bitmap_needed_block,BITMAP_POSITION);
     LBAwrite(fsmap, bitmap_needed_block, BITMAP_POSITION); 
-
 
 	// printf("VCB return%d\n",startBlock);
 	// Return number of the free space to the VCB init that called
@@ -159,53 +158,45 @@ int initRootDir(uint64_t entries_number) {
 
 	
 	// pointer to an array of directory entries
-	struct dirEntry* dir = malloc(block_byte); //ask free space system for 6 blocks
-    if (!dir) {
+	struct dirEntry *dirEntries = malloc(dirEntry_bytes);
+    if (!dirEntries) {
         printf("Directory failed to allocate memory.\n");
         return -1;
     }
 
-    // Initialize directory entries
-    for (int i = 0; i < dirEntryAmount; i++) {
-        dir[i].fileName[0] = '\0';
-    }
+    // Initialize Root directory entries
+	for (int i = 0; i < dirEntryAmount; i++) {
+		time_t current_time;
+		time(&current_time);
+		strcpy(dirEntries[i].fileName, ""); // Null terminated  
+		dirEntries[i].location = 0;
+		dirEntries[i].isDirectory = 0;
+		dirEntries[i].dirSize = dirEntry_bytes;
+		dirEntries[i].createDate = current_time;
+		dirEntries[i].modifyDate = current_time;
+	}
 
-   	// Get current time
-    time_t current_time;
-    time(&current_time);
-	// printf("current time is %ld second \n",current_time);
-    dir[0].createDate = current_time;
-    dir[0].modifyDate = current_time;
-	dir[0].dirSize = dirEntryAmount; 
-
-	// durectiry entry zero , cd dot indicate current directory 
-	strcpy(dir[0].fileName, ".");
-	dir[0].isDirectory = 1; //Root is a directory
-
+	//Directory entry zero, cd dot should point current
+	strcpy(dirEntries[0].fileName, ".");
+	dirEntries[0].isDirectory = 1; //Root is a directory
 
 	//Root Directory entry one, cd dot dot should point itself
-	strcpy(dir[1].fileName, "..");
-	dir[1].isDirectory = 1; //Root is a directory
+	strcpy(dirEntries[1].fileName, "..");
+	dirEntries[1].isDirectory = 1; //Root is a directory
 
-	// printf("init root dir\n");
-	// printf("write %d blocks\n",block_num);
-	// printf("starting from %d\n",startBlock);
-
-    // Write ROOT directory in number of block starting from index 
-    LBAwrite(dir, block_num, VCB->free_block_index);
+    // Write ROOT directory in number of block starting after bitmap block
+    LBAwrite(dirEntries, block_num, VCB->free_block_index);
+	free(dirEntries);
+	dirEntries= NULL;
 
 
 	// Set the bits for the blocks allocated for the root directory
     for (int i = 0; i < block_num; i++) {
         set_bit(fsmap, (VCB->free_block_index + i));
     }
-	LBAwrite(fsmap,block_num, BITMAP_POSITION); // write back how much block is use
+	LBAwrite(fsmap, 6, 1); // Big error affecting block 7
     // Update the free block index in VCB
-    VCB->free_block_index += block_num;
-	// printf("root dir return free index:%ld \n", vcb.free_block_index);//35
-	// Update and write to disk amount of block that used. 
-
-	free(dir);
+    VCB->free_block_index += block_num;	// Update block that used. 
     return 0;
 }
 
