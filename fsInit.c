@@ -156,7 +156,14 @@ int initRootDir(uint64_t entries_number) {
 	// printf("\ndirEntryAmount: %d",dirEntryAmount);
 	// printf("\nnew update byte of dir: %d",dirEntry_bytes);
 
-	
+	// Set the bits for the blocks allocated for the root directory
+    for (int i = 0; i < block_num; i++) {
+        set_bit(fsmap, (VCB->free_block_index + i));
+    }
+	LBAwrite(fsmap, 6, 1); // Big error affecting block 7
+    // Update the free block index in VCB
+    VCB->free_block_index += block_num;	// Update block that used. 
+
 	// pointer to an array of directory entries
 	struct dirEntry *dirEntries = malloc(dirEntry_bytes);
     if (!dirEntries) {
@@ -189,14 +196,6 @@ int initRootDir(uint64_t entries_number) {
 	free(dirEntries);
 	dirEntries= NULL;
 
-
-	// Set the bits for the blocks allocated for the root directory
-    for (int i = 0; i < block_num; i++) {
-        set_bit(fsmap, (VCB->free_block_index + i));
-    }
-	LBAwrite(fsmap, 6, 1); // Big error affecting block 7
-    // Update the free block index in VCB
-    VCB->free_block_index += block_num;	// Update block that used. 
     return 0;
 }
 
