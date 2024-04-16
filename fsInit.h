@@ -23,6 +23,17 @@
 #define BITMAP_POSITION 1 ///VCB take up block 0,thus start it at index 1
 #define vcbSIG 0x7760602795671593
 
+struct dirEntry* rootDir;
+struct dirEntry* cwDir;
+
+struct get_path_Info 
+{
+    struct dirEntry* parent;
+    char* prevElement;
+    int index;
+};
+
+
 struct dirEntry 
 	{
     char fileName[MAX_FILENAME_LENGTH];// char name size with null-terminator

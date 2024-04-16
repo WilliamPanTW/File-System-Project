@@ -7,6 +7,7 @@
         "stdint.h": "c",
         "fsinit.h": "c",
         "mfs.h": "c",
-        "fslow.h": "c"
+        "fslow.h": "c",
+        "types.h": "c"
     }
 }
