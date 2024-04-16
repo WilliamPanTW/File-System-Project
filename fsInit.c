@@ -27,7 +27,7 @@
 #include "fsInit.h"
 #define vcbSIG 0x7760602795671593
 
-
+void set_Dir(struct dirEntry *dirEntries , int index,char *name,int dirEntryAmount);
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	{
 	printf ("Initializing File System with %ld blocks with a block size of %ld\n", numberOfBlocks, blockSize);
@@ -173,23 +173,16 @@ int initRootDir(uint64_t entries_number) {
 
     // Initialize Root directory entries
 	for (int i = 0; i < dirEntryAmount; i++) {
-		time_t current_time;
-		time(&current_time);
-		strcpy(dirEntries[i].fileName, ""); // Null terminated  
-		dirEntries[i].location = VCB->root_dir_index ;
+		dirEntries[i].fileName[0] = '\0';// Null terminated  
 		dirEntries[i].isDirectory = 0;
-		dirEntries[i].dirSize = dirEntryAmount;
-		dirEntries[i].createDate = current_time;
-		dirEntries[i].modifyDate = current_time;
 	}
 
 	//Directory entry zero, cd dot should point current
-	strcpy(dirEntries[0].fileName, ".");
-	dirEntries[0].isDirectory = 1; //Root is a directory
+	set_Dir(dirEntries,0,".",dirEntryAmount);
+
 
 	//Root Directory entry one, cd dot dot should point itself
-	strcpy(dirEntries[1].fileName, "..");
-	dirEntries[1].isDirectory = 1; //Root is a directory
+	set_Dir(dirEntries,1,"..",dirEntryAmount);
 
     // Write ROOT directory in number of block starting after bitmap block
     LBAwrite(dirEntries, VCB->root_dir_size, VCB->root_dir_index);
@@ -197,6 +190,18 @@ int initRootDir(uint64_t entries_number) {
 	dirEntries= NULL;
 
     return 0;
+}
+
+void set_Dir(struct dirEntry *dirEntries , int index,char *name,int dirEntryAmount){
+	time_t current_time;
+	time(&current_time);
+	strcpy(dirEntries[index].fileName, name);
+	// printf("what is my %d root index? %ld \n",index,VCB->root_dir_index);
+	dirEntries[index].location = VCB->root_dir_index;
+	dirEntries[index].isDirectory = 1; //Root is a directory
+	dirEntries[index].dirSize = dirEntryAmount;
+	dirEntries[index].createDate = current_time;
+	dirEntries[index].modifyDate = current_time;
 }
 
 int trackAndSetBit(char* fsmap, int numberOfBlocks) {
