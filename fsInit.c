@@ -25,9 +25,7 @@
 #include "fsLow.h"
 #include "mfs.h"
 #include "fsInit.h"
-#define vcbSIG 0x7760602795671593
 
-void set_Dir(struct dirEntry *dirEntries , int index,char *name,int dirEntryAmount);
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	{
 	printf ("Initializing File System with %ld blocks with a block size of %ld\n", numberOfBlocks, blockSize);
