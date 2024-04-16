@@ -8,7 +8,8 @@
 *
 * File:: fsInit.h
 *
-* Description:: 
+* Description:: Main driver header file 
+* for file system assignment.
 *
 **************************************************************/
 #ifndef FSINIT

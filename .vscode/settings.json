@@ -6,6 +6,7 @@
         "time.h": "c",
         "stdint.h": "c",
         "fsinit.h": "c",
-        "mfs.h": "c"
+        "mfs.h": "c",
+        "fslow.h": "c"
     }
 }
