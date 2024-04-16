@@ -47,6 +47,23 @@ int fs_rmdir(const char *pathname);
 int fs_stat(const char *path, struct fs_stat *buf);
 
 // HELPER 
+
+//check if it mark as directory 
+int isDirectory(struct dirEntry* entry) {
+    return entry->isDirectory & 1; //0 as false and 1 as is directory 
+}
+
+int findDirEntryByName(struct dirEntry* dirEntries, char* name) {
+    int numEntries = dirEntries->dirSize;
+    printf("Entries suppose to be: %d\n",numEntries);
+    for (int i = 0; i < numEntries; i++) {
+        if (strcmp(dirEntries[i].fileName, name) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 int parsePath(char* path, struct get_path_Info* ppinfo) {
     if (path == NULL) {
         return -1;
@@ -77,22 +94,25 @@ int parsePath(char* path, struct get_path_Info* ppinfo) {
         }
         return -1; //invalid path
     }
-    while (tokenOne != NULL) { //Specified Root
+    while (tokenOne != NULL) { //looking for home 
         char* tokenTwo = strtok_r(NULL, "/", &saveptr);
         int index = findDirEntryByName(parent, tokenOne);
         
-        if (tokenTwo == NULL) {
+        if (tokenTwo == NULL) { // On last element 
             ppinfo->index = index;
             ppinfo->parent = parent;
             ppinfo->prevElement = strdup(tokenOne);
-            return 0;
+            return 0; //EOA
         }
+
         if (index == -1) {
-            return -2;
+            return -2; //invalid path
         }
+
         if (!isDirectory(&parent[index])) {
-            return -2;
+            return -2; //invalid path
         }
+
         struct dirEntry* temp = loadDir(&parent[index]);
 
         //Free the directory entry we won't be using before assigning the next
