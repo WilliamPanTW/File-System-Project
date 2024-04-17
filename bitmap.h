@@ -18,6 +18,15 @@
 #include <stdint.h>
 #define BITMAP_POSITION 1 ///VCB take up block 0,thus start it at index 1
 
+struct extent {
+    int start;
+    int count;
+};
+
+struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t blocksPerExtent);
+
+int initFreeSpace(uint64_t numberOfBlocks);
+
 int trackAndSetBit(char* fsmap, int numberOfBlocks);
 
 // Set the bit at a specific position in the bitmap

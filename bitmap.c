@@ -15,8 +15,144 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "fsInit.h"
 #include "fsLow.h"
 #include "bitmap.h"
+#define MAX_EXTENT_AMOUNT 29
+
+// block_num , minCount 
+struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t blocksPerExtent) {
+    //Start from the root directory
+    int rootDirLocation = VCB->root_dir_index ;
+    int startBlock = -1;
+
+    int extentsNeeded = 0;
+    int blocksRemaining = numberOfBlocks;
+
+    int chunkSize = blocksPerExtent;
+    if (chunkSize > blocksRemaining) {
+        chunkSize = blocksRemaining;
+    }
+    struct extent tempExtents[20];
+    while (blocksRemaining > 0) {
+        //If the loop surpasses the block amount,
+        //The loop should leave immediately
+        int forceBreak = 1;
+
+        //to max amount 
+        for (int i = rootDirLocation; i < VCB->block_size; i++) {
+            int x = get_bit(fsmap, i);
+            if (x == 0) {
+                int tempStartBlock = i;
+
+                int remainingChunkSize = chunkSize - 1;
+                int countedBlocks = 1;
+                while (countedBlocks < blocksRemaining) {
+                    i++;
+                    x = get_bit(fsmap, i);
+                    if (x == 1) {
+                        break;
+                    }
+                    
+                    countedBlocks++;
+                }
+                if (countedBlocks >= chunkSize) {
+                    forceBreak = 0;
+
+                    startBlock = tempStartBlock;
+                    blocksRemaining -= countedBlocks;
+
+                    //Fill the bits with 1s
+                    for (int b = 0; b < countedBlocks; b++) {
+                        set_bit(fsmap, startBlock + b);
+                    }
+
+                    tempExtents[extentsNeeded].start = tempStartBlock;
+                    tempExtents[extentsNeeded].count = countedBlocks;
+                    extentsNeeded++;
+                    break;
+                }
+            }
+        }
+
+        //If surpassed total block amount
+        //If not, run the loop again
+        if (forceBreak) {
+            break;
+        }
+
+    }
+    //Final check if there's enough memory
+    if (blocksRemaining > 0 || extentsNeeded == 0) {
+        printf("Failed to allocate space from volume!\n");
+        return NULL;
+    }
+    if (extentsNeeded > MAX_EXTENT_AMOUNT) {
+        return NULL;
+    }
+
+    struct extent* extents = malloc(extentsNeeded * sizeof(struct extent));
+    if (!extents) {
+        return NULL;
+    }
+
+    //Update the freespace
+    LBAwrite(fsmap, VCB->free_block_size, VCB->free_block_index);
+
+    //Copy extents
+    for (int i = 0; i < extentsNeeded; i++) {
+        extents[i].start = tempExtents[i].start;
+        extents[i].count = tempExtents[i].count;
+    }
+
+    // int bitmap_status ;
+	// for(int i=0;i<=36;i++){
+	// 	bitmap_status = get_bit(fsmap, i);
+	// 	printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
+	// } 
+
+    return extents;
+}
+
+int initFreeSpace(uint64_t numberOfBlocks) {
+	int bytesNeeded = numberOfBlocks / 8; //1 bit per block (smallest addresable Byte)
+	int bitmap_needed_block = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; // floor operation 
+	// printf("\ncechking : %d \n",bitmap_needed_block); //5 
+
+    fsmap = malloc(bitmap_needed_block * MINBLOCKSIZE); //bitmap space (5*512=2560 bytes)
+	if (!fsmap) { 
+    	printf("fail to malloc free space map");
+		free(fsmap);
+		fsmap=NULL;
+		return -1; 
+    }
+	// Initialize free space to all zeros as free in bitmap
+    memset(fsmap, 0, bitmap_needed_block * MINBLOCKSIZE);
+
+	set_bit(fsmap, 0);//set block 0 in bitmap(fsmap) to 1(used) for VCB
+	//iterate to set the needed block for bitmap to allocate free space 
+    for (int i = 1; i <= bitmap_needed_block; i++) {
+        set_bit(fsmap, i); 
+    }
+
+	//inital vcb 
+    VCB->bit_map_index=1; ///VCB take up block 0,thus start it at index 1
+	VCB->free_block_index = VCB->bit_map_index;
+	VCB->free_block_size=bitmap_needed_block;
+    trackAndSetBit(fsmap, numberOfBlocks); //update free space index
+	if (VCB->free_block_size == -1) {
+        printf("Failed to find a free block.\n");
+        return -1;
+    }
+
+    // write 5 blocks starting from block 1 
+	// printf("Fsmap write %d blocks in position %d\n",bitmap_needed_block,BITMAP_POSITION);
+    LBAwrite(fsmap, bitmap_needed_block, VCB->bit_map_index); 
+
+	// printf("VCB return%d\n",startBlock);
+	// Return number of the free space to the VCB init that called
+	return VCB->bit_map_index;
+}
 
 int trackAndSetBit(char* fsmap, int numberOfBlocks) {
     for (int i = 0; i < numberOfBlocks; i++) {

@@ -104,44 +104,6 @@ int initVolumeControlBlock(uint64_t numberOfBlocks){
 	VCB->block_size = numberOfBlocks; //amount of block size
 }
 
-int initFreeSpace(uint64_t numberOfBlocks) {
-	int bytesNeeded = numberOfBlocks / 8; //1 bit per block (smallest addresable Byte)
-	int bitmap_needed_block = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; // floor operation 
-	// printf("\ncechking : %d \n",bitmap_needed_block); //5 
-
-    fsmap = malloc(bitmap_needed_block * MINBLOCKSIZE); //bitmap space (5*512=2560 bytes)
-	if (!fsmap) { 
-    	printf("fail to malloc free space map");
-		free(fsmap);
-		fsmap=NULL;
-		return -1; 
-    }
-	// Initialize free space to all zeros as free in bitmap
-    memset(fsmap, 0, bitmap_needed_block * MINBLOCKSIZE);
-
-	set_bit(fsmap, 0);//set block 0 in bitmap(fsmap) to 1(used) for VCB
-	//iterate to set the needed block for bitmap to allocate free space 
-    for (int i = 1; i <= bitmap_needed_block; i++) {
-        set_bit(fsmap, i); 
-    }
-
-	//inital vcb 
-	VCB->free_block_index = BITMAP_POSITION;
-	VCB->free_block_size=bitmap_needed_block;
-    trackAndSetBit(fsmap, numberOfBlocks); //update free space index
-	if (VCB->free_block_size == -1) {
-        printf("Failed to find a free block.\n");
-        return -1;
-    }
-
-    // write 5 blocks starting from block 1 
-	// printf("Fsmap write %d blocks in position %d\n",bitmap_needed_block,BITMAP_POSITION);
-    LBAwrite(fsmap, bitmap_needed_block, BITMAP_POSITION); 
-
-	// printf("VCB return%d\n",startBlock);
-	// Return number of the free space to the VCB init that called
-	return BITMAP_POSITION;
-}
 
 int initRootDir(uint64_t entries_number) {
 	int dirEntrySize = sizeof(struct dirEntry); // directory entry size (ex.60 bytes)
@@ -157,11 +119,20 @@ int initRootDir(uint64_t entries_number) {
 	// printf("\ndirEntryAmount: %d",dirEntryAmount);
 	// printf("\nnew update byte of dir: %d",dirEntry_bytes);
 
+	//allocate free space with the minimum and maximum(block size) limit  
+    // struct extent* extents = allocateSpace(block_num, blocksNeeded);
+    // if (extents == NULL) {
+    //     return -1;
+    // }
+
 	// Set the bits for the blocks allocated for the root directory
     for (int i = 0; i < block_num; i++) {
         set_bit(fsmap, (VCB->free_block_index + i));
     }
-	LBAwrite(fsmap, 6, 1); // Big error affecting block 7
+	LBAwrite(fsmap, 1, 1); 
+	printf("WTF %d\n",block_num); //29
+	printf("Before update %ld\n",VCB->free_block_index); //track free block
+	// LBAwrite(fsmap, VCB->free_block_size, VCB->free_block_index);
     // Update the free block index in VCB
     VCB->free_block_index += block_num;	// Update block that used. 
 
