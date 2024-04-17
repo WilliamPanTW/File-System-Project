@@ -12,8 +12,8 @@
 * for file system assignment.
 *
 **************************************************************/
-#ifndef FSINIT
-#define FSINIT
+#ifndef _FSINIT_H
+#define _FSINIT_H
 
 #include <stdio.h>
 #include <stdint.h>
@@ -21,7 +21,6 @@
 #define MAX_FILENAME_LENGTH 255
 #define MIN_DE 50
 #define BITMAP_POSITION 1 ///VCB take up block 0,thus start it at index 1
-#define vcbSIG 0x7760602795671593
 
 struct dirEntry* rootDir;
 struct dirEntry* cwDir;
