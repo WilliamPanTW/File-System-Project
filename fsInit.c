@@ -114,13 +114,15 @@ int initRootDir(uint64_t entries_number) {
 	// printf("\ndir entry size: %d",dirEntrySize);
 	int dirEntryAmount = block_byte / dirEntrySize; // result in less waste  (ex.3072/60 = 51 entries)
 	dirEntry_bytes = dirEntrySize * dirEntryAmount; // update the actual byte dirtory could allocate  (ex.60*51= 3060)
-	VCB->root_dir_size = block_num; // amount of blocks of Root Dir 
+	
 	VCB->root_dir_index = VCB->free_block_index; //set root index only when inital 
+	VCB->root_dir_size = block_num; // amount of blocks of Root Dir 
 	// printf("\ndirEntryAmount: %d",dirEntryAmount);
 	// printf("\nnew update byte of dir: %d",dirEntry_bytes);
 
 	//allocate free space with the minimum and maximum(block size) limit  
-    // struct extent* extents = allocateSpace(block_num, blocksNeeded);
+	//encapsulate the functionality for other freespace system  
+    // struct extent* extents = allocateSpace(block_num, block_num);
     // if (extents == NULL) {
     //     return -1;
     // }

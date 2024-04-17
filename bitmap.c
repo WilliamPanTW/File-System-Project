@@ -97,7 +97,7 @@ struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t blocksPerExtent) 
     }
 
     //Update the freespace
-    LBAwrite(fsmap, VCB->free_block_size, VCB->free_block_index);
+    LBAwrite(fsmap, VCB->bit_map_size, VCB->free_block_index);
 
     //Copy extents
     for (int i = 0; i < extentsNeeded; i++) {
@@ -138,9 +138,9 @@ int initFreeSpace(uint64_t numberOfBlocks) {
 	//inital vcb 
     VCB->bit_map_index=1; ///VCB take up block 0,thus start it at index 1
 	VCB->free_block_index = VCB->bit_map_index;
-	VCB->free_block_size=bitmap_needed_block;
+	VCB->bit_map_size=bitmap_needed_block;
     trackAndSetBit(fsmap, numberOfBlocks); //update free space index
-	if (VCB->free_block_size == -1) {
+	if (VCB->bit_map_size == -1) {
         printf("Failed to find a free block.\n");
         return -1;
     }

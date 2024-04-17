@@ -23,6 +23,8 @@ struct extent {
     int count;
 };
 
+//allocate free space with the minimum and maximum(block size) limit  
+//encapsulate the functionality for other freespace system  
 struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t blocksPerExtent);
 
 int initFreeSpace(uint64_t numberOfBlocks);

@@ -50,14 +50,14 @@ struct dirEntry
 struct vcb
 	{
 	uint64_t signature;			//Long type unique identify (8bytes) generate by magic number 
+	uint64_t free_block_index;	//track location of the free space in bitmap
 
 	uint64_t block_index;		//location of the VCB (block 0)
     uint64_t block_size;		//capacity of the volume (19531)
-    
+
 	uint64_t bit_map_index;	     //location of the bitmap
-	uint64_t free_block_index;	//track location of the free space in bitmap
-	uint64_t free_block_size;	//Total number of free blocks(bitmap length)
-	
+	uint64_t bit_map_size;	     //Total number of free blocks(bitmap length)
+
 	uint64_t root_dir_index;	//Location of the root directory 
 	uint64_t root_dir_size;		//Total number of the root directory 
 } ;
