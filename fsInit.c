@@ -122,7 +122,8 @@ int initRootDir(uint64_t entries_number) {
 
 	//allocate free space with the minimum and maximum(block size) limit  
 	//encapsulate the functionality for other freespace system  
-    // struct extent* extents = allocateSpace(block_num, block_num);
+	int min_block_count=block_num;
+    // struct extent* extents = allocateSpace(block_num, min_block_count);
     // if (extents == NULL) {
     //     return -1;
     // }

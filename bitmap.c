@@ -20,8 +20,9 @@
 #include "bitmap.h"
 #define MAX_EXTENT_AMOUNT 29
 
-// block_num , minCount 
-struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t blocksPerExtent) {
+////allocate free space with the minimum and maximum(block size) limit  
+//encapsulate the functionality for other freespace system  
+struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t min_block_count) {
     //Start from the root directory
     int rootDirLocation = VCB->root_dir_index ;
     int startBlock = -1;
@@ -29,17 +30,20 @@ struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t blocksPerExtent) 
     int extentsNeeded = 0;
     int blocksRemaining = numberOfBlocks;
 
-    int chunkSize = blocksPerExtent;
+    // Determine chunk size based on provided minimun block count
+    int chunkSize = min_block_count;
     if (chunkSize > blocksRemaining) {
         chunkSize = blocksRemaining;
     }
+
+    //Temporary storage for extents
     struct extent tempExtents[20];
+    // Loop until all blocks are allocated or there's not enough space
     while (blocksRemaining > 0) {
-        //If the loop surpasses the block amount,
-        //The loop should leave immediately
+        //Flag to break out of the loop if no suitable space found
         int forceBreak = 1;
 
-        //to max amount 
+        //Iterate through blocks to find free space
         for (int i = rootDirLocation; i < VCB->block_size; i++) {
             int x = get_bit(fsmap, i);
             if (x == 0) {
@@ -47,6 +51,8 @@ struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t blocksPerExtent) 
 
                 int remainingChunkSize = chunkSize - 1;
                 int countedBlocks = 1;
+
+                // Check consecutive blocks for availability
                 while (countedBlocks < blocksRemaining) {
                     i++;
                     x = get_bit(fsmap, i);
@@ -56,13 +62,15 @@ struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t blocksPerExtent) 
                     
                     countedBlocks++;
                 }
+
+                //If enough consecutive blocks found, allocate space
                 if (countedBlocks >= chunkSize) {
                     forceBreak = 0;
 
                     startBlock = tempStartBlock;
                     blocksRemaining -= countedBlocks;
 
-                    //Fill the bits with 1s
+                    //Set allocated blocks as used in the free space map
                     for (int b = 0; b < countedBlocks; b++) {
                         set_bit(fsmap, startBlock + b);
                     }
@@ -75,31 +83,32 @@ struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t blocksPerExtent) 
             }
         }
 
-        //If surpassed total block amount
-        //If not, run the loop again
+        // If loop didn't find enough space, break out
         if (forceBreak) {
             break;
         }
 
     }
-    //Final check if there's enough memory
+    // Check if allocation failed
     if (blocksRemaining > 0 || extentsNeeded == 0) {
         printf("Failed to allocate space from volume!\n");
         return NULL;
     }
+    //Check if too many extents needed
     if (extentsNeeded > MAX_EXTENT_AMOUNT) {
         return NULL;
     }
 
+    // Allocate memory for extents
     struct extent* extents = malloc(extentsNeeded * sizeof(struct extent));
     if (!extents) {
         return NULL;
     }
 
-    //Update the freespace
+    // Update the free space map on disk
     LBAwrite(fsmap, VCB->bit_map_size, VCB->free_block_index);
 
-    //Copy extents
+    // Copy extent information to allocated memory
     for (int i = 0; i < extentsNeeded; i++) {
         extents[i].start = tempExtents[i].start;
         extents[i].count = tempExtents[i].count;
