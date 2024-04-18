@@ -40,7 +40,11 @@ int fs_closedir(fdDir *dirp);
 
 
 // Key directory functions
-int fs_mkdir(const char *pathname, mode_t mode);
+int fs_mkdir(const char *pathname, mode_t mode){
+
+    return 0;
+}
+
 int fs_rmdir(const char *pathname);
 
 
@@ -48,11 +52,13 @@ int fs_stat(const char *path, struct fs_stat *buf);
 
 // HELPER 
 
+//**************helper function for parePath**************
 //check if it mark as directory 
 int isDirectory(struct dirEntry* entry) {
     return entry->isDirectory & 1; //0 as false and 1 as is directory 
 }
 
+// find directory by it name 
 int findDirEntryByName(struct dirEntry* dirEntries, char* name) {
     int numEntries = dirEntries->dirSize;
     printf("Entries suppose to be: %d\n",numEntries);

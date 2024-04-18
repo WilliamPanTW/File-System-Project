@@ -46,6 +46,11 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
         return -1; //fail to inital free space 
     }
 	
+	// int bitmap_status ;
+	// for(int i=0;i<=VCB->bit_map_size+1;i++){
+	// 	bitmap_status = get_bit(fsmap, i);
+	// 	printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
+	// } 
 
 	//**************************Root**************************//
 
@@ -120,11 +125,6 @@ int initRootDir(uint64_t entries_number) {
 	//allocate free space with the minimum and maximum(block size) limit  
     struct extent* extents = allocateSpace(block_num, min_block_count);
 	if (extents == NULL) {
-		// int bitmap_status ;
-		// for(int i=0;i<=36;i++){
-		// 	bitmap_status = get_bit(fsmap, i);
-		// 	printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
-		// } 
 		printf("There is not enough space to allocate, please check butmap status");
 	    return -1;
 	}
@@ -154,6 +154,7 @@ int initRootDir(uint64_t entries_number) {
 	set_Dir(dirEntries,1,"..",dirEntryAmount);
 
     // Write ROOT directory in number of block starting after bitmap block
+	// printf("write %ld blocks of direntries from index %ld\n",VCB->root_dir_size, VCB->root_dir_index);
     LBAwrite(dirEntries, VCB->root_dir_size, VCB->root_dir_index);
 	free(dirEntries);
 	dirEntries= NULL;

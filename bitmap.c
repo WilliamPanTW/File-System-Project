@@ -20,14 +20,29 @@
 #include "bitmap.h"
 #define DEFAULT_AMOUNT 29
 
+// Free range of blocks in free space map(bitmap)
+void releaseBlock(uint64_t startBlock, uint64_t block_amount) {
+    // Check if startBlock is within the valid range(amount of file system)
+    if (startBlock < 0 || startBlock >= VCB->block_size) {
+         // If it out of bounds, return without performing any action
+        return;
+    }
+    //Loop through the range number of blocks and free
+    for (int i = 0; i < block_amount; i++) {
+        clear_bit(fsmap, startBlock + i);
+    }
+    //Update map on disk 
+    LBAwrite(fsmap, VCB->bit_map_size, VCB->bit_map_index);
+}
+
 ////allocate free space with the minimum and maximum(block size) limit  
 //encapsulate the functionality for other freespace system  
-struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t min_block_count) {
+struct extent* allocateSpace(uint64_t block_amount, uint64_t min_block_count) {
     // Start from the root directory
     int rootDirLocation = VCB->bit_map_index + VCB->bit_map_size + 1 ; //add one for vcb
     int startBlock = -1; // no valid starting block has been found yet.
     int extentsNeeded = 0;
-    int blocksRemaining = numberOfBlocks;
+    int blocksRemaining = block_amount;
 
     // Determine chunk size based on provided minimum block count
     int chunkSize = min_block_count < blocksRemaining ? min_block_count : blocksRemaining;
@@ -105,7 +120,7 @@ struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t min_block_count) 
 int initFreeSpace(uint64_t numberOfBlocks) {
 	int bytesNeeded = numberOfBlocks / 8; //1 bit per block (smallest addresable Byte)
 	int bitmap_needed_block = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; // floor operation 
-	// printf("\ncechking : %d \n",bitmap_needed_block); //5 
+	// printf("\n checking : %d \n",bitmap_needed_block); //5 
 
     fsmap = malloc(bitmap_needed_block * MINBLOCKSIZE); //bitmap space (5*512=2560 bytes)
 	if (!fsmap) { 
@@ -116,41 +131,37 @@ int initFreeSpace(uint64_t numberOfBlocks) {
     }
 	// Initialize free space to all zeros as free in bitmap
     memset(fsmap, 0, bitmap_needed_block * MINBLOCKSIZE);
+    
+    if(get_bit(fsmap,0)==0){ //check if it free
+        set_bit(fsmap,0); //set block 0 as used for vcb
+        VCB->bit_map_index=1; ///VCB take up block 0,thus start it at index 1
+    }
 
-	set_bit(fsmap, 0);//set block 0 in bitmap(fsmap) to 1(used) for VCB
-	//iterate to set the needed block for bitmap to allocate free space 
+	//iterate and set used from vcb(block 0) to needed block for bitmap  
     for (int i = 1; i <= bitmap_needed_block; i++) {
-        set_bit(fsmap, i); 
+        if (get_bit(fsmap, i) == 0) { //check if it free
+            set_bit(fsmap, i); // Set the bit to indicate it's used
+            VCB->free_block_index = i; // Update the free block index in VCB
+        }else{
+            printf("Block %d is already in use.\n", i);
+        }
     }
 
 	//inital vcb 
-    VCB->bit_map_index=1; ///VCB take up block 0,thus start it at index 1
-	VCB->free_block_index = VCB->bit_map_index;
 	VCB->bit_map_size=bitmap_needed_block;
-    trackAndSetBit(fsmap, numberOfBlocks); //update free space index
+    VCB->free_block_index = VCB->bit_map_index;
 	if (VCB->bit_map_size == -1) {
         printf("Failed to find a free block.\n");
+        free(fsmap);
+        fsmap=NULL;
         return -1;
     }
-
     // write 5 blocks starting from block 1 
-	// printf("Fsmap write %d blocks in position %d\n",bitmap_needed_block,BITMAP_POSITION);
-    LBAwrite(fsmap, bitmap_needed_block, VCB->bit_map_index); 
+    // printf("fsmap write %ld blocks in index %ld\n",VCB->bit_map_size,VCB->bit_map_index);
+    LBAwrite(fsmap, VCB->bit_map_size, VCB->bit_map_index); 
 
-	// printf("VCB return%d\n",startBlock);
 	// Return number of the free space to the VCB init that called
 	return VCB->bit_map_index;
-}
-
-int trackAndSetBit(char* fsmap, int numberOfBlocks) {
-    for (int i = 0; i < numberOfBlocks; i++) {
-        if (!get_bit(fsmap, i)) { // If the block is free
-            set_bit(fsmap, i); // Set the bit to indicate it's used
-            VCB->free_block_index = i; // Update the free block index in VCB
-            return i; // Return the index which is updated
-        }
-    }
-    return -1; // If no free block is found
 }
 
 

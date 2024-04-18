@@ -25,11 +25,12 @@ struct extent {
 
 //allocate free space with the minimum and maximum(block size) limit  
 //encapsulate the functionality for other freespace system  
-struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t min_block_count);
+struct extent* allocateSpace(uint64_t block_amount, uint64_t min_block_count);
+
+// Free range of blocks in free space map(bitmap)
+void releaseBlock(uint64_t startBlock, uint64_t block_amount);
 
 int initFreeSpace(uint64_t numberOfBlocks);
-
-int trackAndSetBit(char* fsmap, int numberOfBlocks);
 
 // Set the bit at a specific position in the bitmap
 void set_bit(char* fsmap, int block_number);
