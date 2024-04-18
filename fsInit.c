@@ -119,16 +119,19 @@ int initRootDir(uint64_t entries_number) {
 	int min_block_count=block_num;
 	//allocate free space with the minimum and maximum(block size) limit  
     struct extent* extents = allocateSpace(block_num, min_block_count);
+	if (extents == NULL) {
+		// int bitmap_status ;
+		// for(int i=0;i<=36;i++){
+		// 	bitmap_status = get_bit(fsmap, i);
+		// 	printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
+		// } 
+		printf("There is not enough space to allocate, please check butmap status");
+	    return -1;
+	}
+
 	VCB->root_dir_index = extents->start; //set root index only when inital 
 	VCB->root_dir_size = extents->count; // amount of blocks of Root Dir 
-	int bitmap_status ;
-	for(int i=0;i<=36;i++){
-		bitmap_status = get_bit(fsmap, i);
-		printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
-	} 
-	if (extents == NULL) {
-        return -1;
-	}
+
 
 	// pointer to an array of directory entries
 	struct dirEntry *dirEntries = malloc(dirEntry_bytes);
