@@ -38,8 +38,8 @@ void releaseBlock(uint64_t startBlock, uint64_t block_amount) {
 ////allocate free space with the minimum and maximum(block size) limit  
 //encapsulate the functionality for other freespace system  
 struct extent* allocateSpace(uint64_t block_amount, uint64_t min_block_count) {
-    // Start from the root directory
-    int rootDirLocation = VCB->bit_map_index + VCB->bit_map_size + 1 ; //add one for vcb
+    // Start from the root directory after vcb and bitmap
+    int rootDirLocation = VCB->bit_map_index + VCB->bit_map_size; 
     int startBlock = -1; // no valid starting block has been found yet.
     int extentsNeeded = 0;
     int blocksRemaining = block_amount;
@@ -117,8 +117,8 @@ struct extent* allocateSpace(uint64_t block_amount, uint64_t min_block_count) {
     return extents;
 }
 
-int initFreeSpace(uint64_t numberOfBlocks) {
-	int bytesNeeded = numberOfBlocks / 8; //1 bit per block (smallest addresable Byte)
+int initFreeSpace(uint64_t block_amount) {
+	int bytesNeeded = block_amount / 8; //1 bit per block (smallest addresable Byte)
 	int bitmap_needed_block = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; // floor operation 
 	// printf("\n checking : %d \n",bitmap_needed_block); //5 
 

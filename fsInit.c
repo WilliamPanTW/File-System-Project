@@ -62,7 +62,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 
 	//**************************Check**************************//
 	// int bitmap_status ;
-	// for(int i=0;i<=36;i++){
+	// for(int i=0;i<=VCB->root_dir_index+VCB->root_dir_size;i++){
 	// 	bitmap_status = get_bit(fsmap, i);
 	// 	printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
 	// } 
