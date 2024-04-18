@@ -114,30 +114,21 @@ int initRootDir(uint64_t entries_number) {
 	// printf("\ndir entry size: %d",dirEntrySize);
 	int dirEntryAmount = block_byte / dirEntrySize; // result in less waste  (ex.3072/60 = 51 entries)
 	dirEntry_bytes = dirEntrySize * dirEntryAmount; // update the actual byte dirtory could allocate  (ex.60*51= 3060)
-	
-	VCB->root_dir_index = VCB->free_block_index; //set root index only when inital 
-	VCB->root_dir_size = block_num; // amount of blocks of Root Dir 
-	// printf("\ndirEntryAmount: %d",dirEntryAmount);
-	// printf("\nnew update byte of dir: %d",dirEntry_bytes);
 
-	//allocate free space with the minimum and maximum(block size) limit  
 	//encapsulate the functionality for other freespace system  
 	int min_block_count=block_num;
-    // struct extent* extents = allocateSpace(block_num, min_block_count);
-    // if (extents == NULL) {
-    //     return -1;
-    // }
-
-	// Set the bits for the blocks allocated for the root directory
-    for (int i = 0; i < block_num; i++) {
-        set_bit(fsmap, (VCB->free_block_index + i));
-    }
-	LBAwrite(fsmap, 1, 1); 
-	printf("WTF %d\n",block_num); //29
-	printf("Before update %ld\n",VCB->free_block_index); //track free block
-	// LBAwrite(fsmap, VCB->free_block_size, VCB->free_block_index);
-    // Update the free block index in VCB
-    VCB->free_block_index += block_num;	// Update block that used. 
+	//allocate free space with the minimum and maximum(block size) limit  
+    struct extent* extents = allocateSpace(block_num, min_block_count);
+	VCB->root_dir_index = extents->start; //set root index only when inital 
+	VCB->root_dir_size = extents->count; // amount of blocks of Root Dir 
+	int bitmap_status ;
+	for(int i=0;i<=36;i++){
+		bitmap_status = get_bit(fsmap, i);
+		printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
+	} 
+	if (extents == NULL) {
+        return -1;
+	}
 
 	// pointer to an array of directory entries
 	struct dirEntry *dirEntries = malloc(dirEntry_bytes);

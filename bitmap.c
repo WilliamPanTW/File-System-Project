@@ -47,6 +47,7 @@ struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t min_block_count) 
         for (int i = rootDirLocation; i < VCB->block_size; i++) {
             int x = get_bit(fsmap, i);
             if (x == 0) {
+                printf("suppose to be seven:%d \n",i);
                 int tempStartBlock = i;
 
                 int remainingChunkSize = chunkSize - 1;
@@ -72,9 +73,9 @@ struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t min_block_count) 
 
                     //Set allocated blocks as used in the free space map
                     for (int b = 0; b < countedBlocks; b++) {
-                        set_bit(fsmap, startBlock + b);
+                        set_bit(fsmap, startBlock + b); // for extents 
+                        // set_bit(fsmap, (VCB->free_block_index + i)); //for vcb
                     }
-
                     tempExtents[extentsNeeded].start = tempStartBlock;
                     tempExtents[extentsNeeded].count = countedBlocks;
                     extentsNeeded++;
@@ -106,19 +107,16 @@ struct extent* allocateSpace(uint64_t numberOfBlocks, uint64_t min_block_count) 
     }
 
     // Update the free space map on disk
-    LBAwrite(fsmap, VCB->bit_map_size, VCB->free_block_index);
+    LBAwrite(fsmap, VCB->bit_map_size, VCB->bit_map_index);
+    
+	// Update the free block that is used in VCB
+    VCB->free_block_index += min_block_count;	
 
     // Copy extent information to allocated memory
     for (int i = 0; i < extentsNeeded; i++) {
         extents[i].start = tempExtents[i].start;
         extents[i].count = tempExtents[i].count;
     }
-
-    // int bitmap_status ;
-	// for(int i=0;i<=36;i++){
-	// 	bitmap_status = get_bit(fsmap, i);
-	// 	printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
-	// } 
 
     return extents;
 }
