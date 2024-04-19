@@ -18,12 +18,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <time.h>
-#define MAX_FILENAME_LENGTH 255
+#define MAX_FILENAME_LENGTH 256
 #define MIN_DE 50
-
-
-struct dirEntry* rootDir;
-struct dirEntry* cwDir;
 
 struct dirEntry 
 	{
@@ -53,9 +49,6 @@ struct vcb
 	uint64_t root_dir_index;	//Location of the root directory 
 	uint64_t root_dir_size;		//Total number of the root directory 
 } ;
-
-	struct vcb *VCB;
-	char * fsmap; //global unsign char fsmap pointer 
 
 	void set_bit(char* bitmap, int position);
 	int get_bit(char* bitmap, int position);

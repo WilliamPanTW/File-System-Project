@@ -8,7 +8,8 @@
 *
 * File:: bitmap.h
 *
-* Description:: This is a file that implement bitmap 
+* Description:: This is a free space system that contains functions 
+* for bitmap which tracks,set,clear,allocation,release of blocks.
 *
 **************************************************************/
 #ifndef _BITMAP_H

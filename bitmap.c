@@ -8,16 +8,19 @@
 *
 * File:: bitmap.c
 *
-* Description:: This is a file that implement bitmap 
+* Description:: This is a free space system that contains functions 
+* for bitmap which tracks,set,clear,allocation,release of blocks.
 *
 **************************************************************/
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "fsInit.h"
 #include "fsLow.h"
 #include "bitmap.h"
+#include "global.h"
 #define DEFAULT_AMOUNT 29
 
 // Free range of blocks in free space map(bitmap)

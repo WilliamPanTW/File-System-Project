@@ -25,7 +25,8 @@
 #include "fsLow.h"
 #include "mfs.h"
 #include "fsInit.h"
-#include "bitmap.c"
+#include "bitmap.h"
+#include "global.h"
 
 #define vcbSIG 0x7760602795671593 //magic number signature for VCB
 

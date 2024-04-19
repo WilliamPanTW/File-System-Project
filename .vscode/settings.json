@@ -11,7 +11,8 @@
         "types.h": "c",
         "bitmap.h": "c",
         "string.h": "c",
-        "history.h": "c"
+        "history.h": "c",
+        "getopt.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

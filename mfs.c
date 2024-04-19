@@ -17,15 +17,13 @@
 #include "mfs.h"
 #include "fsInit.h"
 #include "fsLow.h"
+#include "global.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-//global variable
-struct pp_return_struct pathInfo;  
-
-
+  
 // Misc directory functions
 char * fs_getcwd(char *pathname, size_t size);
 int fs_setcwd(char *pathname);   //linux chdir
@@ -49,8 +47,16 @@ int fs_closedir(fdDir *dirp);
 
 // Key directory functions
 int fs_mkdir(const char *pathname, mode_t mode){
-    parsePath((char*)pathname, &pathInfo);
-
+    int result;
+    struct pp_return_struct ppinfo;
+    result = parsePath((char*)pathname, &ppinfo);
+    if(result == -1){ 
+        return -1; //invalid path
+    }
+    if(ppinfo.lastElementIndex!=-1){
+        return -1; //already exist 
+    }
+    printf("--------------Hello world%d--------------\n",result);
     return 0;
 }
 
