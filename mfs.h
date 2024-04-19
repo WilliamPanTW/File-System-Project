@@ -35,6 +35,12 @@ typedef u_int64_t uint64_t;
 typedef u_int32_t uint32_t;
 #endif
 
+struct pp_return_struct 
+{
+    struct dirEntry* parent;
+    char* lastElementName;
+    int lastElementIndex;
+};
 
 // This structure is returned by fs_readdir to provide the caller with information
 // about each file as it iterates through a directory
@@ -92,16 +98,10 @@ struct fs_stat
 
 int fs_stat(const char *path, struct fs_stat *buf);
 //**************helper function for parePath**************
-struct pp_return_struct 
-{
-    struct dirEntry* parent;
-    char* lastElementName;
-    int lastElementIndex;
-};
 
 int parsePath(char* path, struct pp_return_struct* ppinfo);
 
-int findDirEntryByName(struct dirEntry* dirEntries, char* name);
+int findDirEntry(struct dirEntry* dirEntries, char* name);
 
 int isDirectory(struct dirEntry* entry);
 

@@ -50,13 +50,16 @@ int fs_mkdir(const char *pathname, mode_t mode){
     int result;
     struct pp_return_struct ppinfo;
     result = parsePath((char*)pathname, &ppinfo);
+    printf("RESULTTTTTTTTTTTTTTTTTTTTTTT: %d \n",result);
+    printf("ppinfo.lastElementIndex: %d \n",ppinfo.lastElementIndex);
+
     if(result == -1){ 
         return -1; //invalid path
     }
     if(ppinfo.lastElementIndex!=-1){
         return -1; //already exist 
     }
-    printf("--------------Hello world%d--------------\n",result);
+
     return 0;
 }
 
@@ -75,15 +78,14 @@ int isDirectory(struct dirEntry* entry) {
 }
 
 // find directory by it name 
-int findDirEntryByName(struct dirEntry* dirEntries, char* name) {
+int findDirEntry(struct dirEntry* dirEntries, char* name) {
     int numEntries = dirEntries->dirSize;
-    printf("Entries suppose to be: %d\n",numEntries);
     for (int i = 0; i < numEntries; i++) {
         if (strcmp(dirEntries[i].fileName, name) == 0) {
-            return i;
+            return i; //return index of directory entries 
         }
     }
-    return -1;
+    return -1;//no directory found 
 }
 
 struct dirEntry* loadDir(struct dirEntry* entry) {
@@ -125,11 +127,14 @@ int parsePath(char* path, struct pp_return_struct* ppinfo) {
         startparent = rootDir; //already loaded into memroy ROOT
     }else{
         startparent = cwDir;//alread loaded into memory CWD
+        printf("--------------Suppose startParent: %p--------------\n",(void*)startparent); 
     }
     
     struct dirEntry* parent = startparent;
     char* saveptr;
     char* tokenOne = strtok_r(copyPath, "/", &saveptr);
+    printf("--------------Path name token1: %s--------------\n",tokenOne); //pathname 
+
     // cd "/" to root OR invalid path
     if (tokenOne == NULL) {
         if (copyPath[0] !=  '/'){//Nothing specified invalid path
@@ -142,14 +147,18 @@ int parsePath(char* path, struct pp_return_struct* ppinfo) {
             return 0;
         }
     }
+
     while (tokenOne != NULL) {  // find if it in directory 
         char* tokenTwo = strtok_r(NULL, "/", &saveptr); 
-        int index = findDirEntryByName(parent, tokenOne);//return if it valid diretory
-        
+        printf("--------------NULL Last elemenet:  %s--------------\n",tokenTwo);//NULL last element 
+
+        int index = findDirEntry(parent, tokenOne);//return if it valid diretory
+        printf("--------------No findDirEntry %d--------------\n",index);
         if (tokenTwo == NULL) { // On last element 
             ppinfo->parent = parent;
             ppinfo->lastElementName = strdup(tokenOne);
             ppinfo->lastElementIndex = index;
+            printf("--------Name of parent[index]: %d-----\n", parent[index].isDirectory);
             return 0; //reach end of file
         }
 

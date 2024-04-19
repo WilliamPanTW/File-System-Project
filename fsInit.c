@@ -60,7 +60,6 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
         return -1; //fail to inital Root directory  
     }
 
-
 	//**************************Check**************************//
 	// int bitmap_status ;
 	// for(int i=0;i<=VCB->root_dir_index+VCB->root_dir_size;i++){
@@ -78,12 +77,16 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	
 void exitFileSystem ()
 	{
+
+
 	//Free pinter prevent memory leak  
     free(fsmap); //bitmap
     fsmap = NULL;
 
 	free(VCB);
     VCB = NULL;
+
+
 
 	printf ("System exiting\n");
 	}
@@ -148,29 +151,28 @@ int initRootDir(uint64_t entries_number) {
 	}
 
 	//Directory entry zero, cd dot should point current
-	set_Dir(dirEntries,0,".",block_num);
+	set_Dir(dirEntries,0,".",dirEntryAmount);
 
 
 	//Root Directory entry one, cd dot dot should point itself
-	set_Dir(dirEntries,1,"..",block_num);
+	set_Dir(dirEntries,1,"..",dirEntryAmount);
 
     // Write ROOT directory in number of block starting after bitmap block
 	// printf("write %ld blocks of direntries from index %ld\n",VCB->root_dir_size, VCB->root_dir_index);
     LBAwrite(dirEntries, VCB->root_dir_size, VCB->root_dir_index);
-	free(dirEntries);
-	dirEntries= NULL;
-
+	rootDir = dirEntries;
+    cwDir = rootDir;
     return 0;
 }
 
-void set_Dir(struct dirEntry *dirEntries , int index,char *name,int block_num){
+void set_Dir(struct dirEntry *dirEntries , int index,char *name,int dirEntryAmount){
 	time_t current_time;
 	time(&current_time);
 	strcpy(dirEntries[index].fileName, name);
 	// printf("what is my %d root index? %ld \n",index,VCB->root_dir_index);
 	dirEntries[index].location = VCB->root_dir_index;
 	dirEntries[index].isDirectory = 1; //Root is a directory
-	dirEntries[index].dirSize = block_num;
+	dirEntries[index].dirSize = dirEntryAmount;
 	dirEntries[index].createDate = current_time;
 	dirEntries[index].modifyDate = current_time;
 }
