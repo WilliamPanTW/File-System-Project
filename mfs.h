@@ -89,6 +89,21 @@ struct fs_stat
 	};
 
 int fs_stat(const char *path, struct fs_stat *buf);
+//**************helper function for parePath**************
+struct pp_return_struct 
+{
+    struct dirEntry* parent;
+    char* lastElementName;
+    int lastElementIndex;
+};
+
+int parsePath(char* path, struct pp_return_struct* ppinfo);
+
+int findDirEntryByName(struct dirEntry* dirEntries, char* name);
+
+int isDirectory(struct dirEntry* entry);
+
+struct dirEntry* loadDir(struct dirEntry* entry);
 
 #endif
 

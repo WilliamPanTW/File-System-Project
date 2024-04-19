@@ -9,7 +9,9 @@
         "mfs.h": "c",
         "fslow.h": "c",
         "types.h": "c",
-        "bitmap.h": "c"
+        "bitmap.h": "c",
+        "string.h": "c",
+        "history.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

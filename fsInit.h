@@ -25,14 +25,6 @@
 struct dirEntry* rootDir;
 struct dirEntry* cwDir;
 
-struct get_path_Info 
-{
-    struct dirEntry* parent;
-    char* prevElement;
-    int index;
-};
-
-
 struct dirEntry 
 	{
     char fileName[MAX_FILENAME_LENGTH];// char name size with null-terminator
@@ -40,7 +32,7 @@ struct dirEntry
     uint64_t location;               // long type of address(location)
 
     uint32_t isDirectory;            // indicating it's a directory(1) or a file(0)
-    uint32_t dirSize;               // unsigned integer of directory size
+    uint32_t dirSize;               // unsigned integer of directory size in blocks
 
     time_t createDate;           // integer or long depend on implementation
     time_t modifyDate;           // integer or long depend on implementation
@@ -74,8 +66,6 @@ struct vcb
 	int initVolumeControlBlock(uint64_t numberOfBlocks);
 	int initFreeSpace(uint64_t numberOfBlocks);
 	int initRootDir(uint64_t numberOfBlocks);
-	int trackAndSetBit(char* fsmap, int numberOfBlocks);
-	void updateFreeSpace(int block_num);
 
 	void set_bit(char* bitmap, int position);
 	int get_bit(char* bitmap, int position);
