@@ -131,14 +131,14 @@ int createDirectory(uint64_t entries_number) {
 	//encapsulate the functionality for other freespace system  
 	int min_block_count=block_num;
 	//allocate free space with the minimum and maximum(block size) limit  
-    struct extent* extents = allocateSpace(block_num, min_block_count);
-	if (extents == NULL) {
+    struct extent *location = allocateSpace(block_num, min_block_count);
+	if (location == NULL) {
 		printf("There is not enough space to allocate, please check butmap status");
 	    return -1;
 	}
 
-	VCB->root_dir_index = extents->start; //set root index only when inital 
-	VCB->root_dir_size = extents->count; // amount of blocks of Root Dir 
+	VCB->root_dir_index = location->start; //set root index only when inital 
+	VCB->root_dir_size = location->count; // amount of blocks of Root Dir 
 
 
 	// pointer to an array of directory entries
@@ -155,28 +155,29 @@ int createDirectory(uint64_t entries_number) {
 	}
 
 	//Directory entry zero, cd dot should point current
-	set_Dir(dirEntries,0,".",dirEntryAmount);
+	set_Dir(dirEntries,location,0,".",dirEntryAmount);
 
 
 	//Root Directory entry one, cd dot dot should point itself
-	set_Dir(dirEntries,1,"..",dirEntryAmount);
+	set_Dir(dirEntries,location,1,"..",dirEntryAmount);
 
     // Write ROOT directory in number of block starting after bitmap block
 	// printf("write %ld blocks of direntries from index %ld\n",VCB->root_dir_size, VCB->root_dir_index);
-    LBAwrite(dirEntries, VCB->root_dir_size, VCB->root_dir_index);
+    LBAwrite(dirEntries,VCB->root_dir_size, VCB->root_dir_index);
 	rootDir = dirEntries;
     cwDir = rootDir;
     return 0;
 }
 
-void set_Dir(struct dirEntry *dirEntries , int index,char *name,int dirEntryAmount){
+	void set_Dir(struct dirEntry *dirEntries, struct extent *location,int index,char *name,int dirEntryAmount){
 	time_t current_time;
 	time(&current_time);
 	strcpy(dirEntries[index].fileName, name);
 	// printf("what is my %d root index? %ld \n",index,VCB->root_dir_index);
-	dirEntries[index].location = VCB->root_dir_index;
+	dirEntries[index].dir_index = location->start;
+	dirEntries[index].dir_size = location->count;
 	dirEntries[index].isDirectory = 1; //Root is a directory
-	dirEntries[index].dirSize = dirEntryAmount;
+	dirEntries[index].entry_amount = dirEntryAmount;
 	dirEntries[index].createDate = current_time;
 	dirEntries[index].modifyDate = current_time;
 }

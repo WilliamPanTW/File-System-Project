@@ -18,17 +18,19 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <time.h>
+#include "bitmap.h"
 #define MAX_FILENAME_LENGTH 256
 #define MIN_DE 50
 
 struct dirEntry 
 	{
     char fileName[MAX_FILENAME_LENGTH];// char name size with null-terminator
+	uint32_t isDirectory;            // indicating it's a directory(1) or a file(0)
 
-    uint64_t location;               // long type of address(location)
+	uint32_t dir_index;				//location index in disk 
+	uint32_t dir_size;				//location length in disk
 
-    uint32_t isDirectory;            // indicating it's a directory(1) or a file(0)
-    uint32_t dirSize;               // unsigned integer of directory size in blocks
+    uint32_t entry_amount;         // amounts of directory in this array of directory 
 
     time_t createDate;           // integer or long depend on implementation
     time_t modifyDate;           // integer or long depend on implementation
@@ -53,7 +55,8 @@ struct vcb
 	void set_bit(char* bitmap, int position);
 	int get_bit(char* bitmap, int position);
 	void clear_bit(char* bitmap, int position);
-	void set_Dir(struct dirEntry *dirEntries , int index,char *name,int dirEntryAmount);
+
+	void set_Dir(struct dirEntry *dirEntries, struct extent *location,int index,char *name,int dirEntryAmount);
 
 	//**************************Helper function**************************//
 	int initVolumeControlBlock(uint64_t numberOfBlocks);

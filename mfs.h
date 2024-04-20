@@ -109,5 +109,11 @@ int isDirectory(struct dirEntry* entry);
 
 struct dirEntry* loadDir(struct dirEntry* entry);
 
+void freeLastElementName();
+
+void freePathParent();
+
+void freeppinfo();
+
 #endif
 

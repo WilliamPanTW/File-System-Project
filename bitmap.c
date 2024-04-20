@@ -100,15 +100,15 @@ struct extent* allocateSpace(uint64_t block_amount, uint64_t min_block_count) {
     }
 
     // Allocate memory for extents
-    struct extent* extents = malloc(extentsNeeded * sizeof(struct extent));
-    if (!extents) {
+    struct extent* location = malloc(extentsNeeded * sizeof(struct extent));
+    if (!location) {
         return NULL;
     }
 
     // Copy extent information to allocated memory
     for (int i = 0; i < extentsNeeded; i++) {
-        extents[i].start = tempExtents[i].start;
-        extents[i].count = tempExtents[i].count;
+        location[i].start = tempExtents[i].start;
+        location[i].count = tempExtents[i].count;
     }
 
     // Update the free space map on disk
@@ -117,7 +117,7 @@ struct extent* allocateSpace(uint64_t block_amount, uint64_t min_block_count) {
     // Update the free block that is used in VCB
     VCB->free_block_index += min_block_count;
 
-    return extents;
+    return location;
 }
 
 int initFreeSpace(uint64_t block_amount) {

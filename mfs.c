@@ -22,10 +22,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-//global pare path info
-struct pp_return_struct ppinfo;
 
-  
+
 // Misc directory functions
 char * fs_getcwd(char *pathname, size_t size);
 int fs_setcwd(char *pathname);   //linux chdir
@@ -58,12 +56,14 @@ int fs_mkdir(const char *pathname, mode_t mode){
 
     //Check the directory is not exist to create new directory  
     if(ppinfo.lastElementIndex!=-1){
+        freeppinfo();
         return -1; //already exist 
     }
 
     //find free directory entries
     int index = findUnusedDE(ppinfo.parent);
     if (index == -1) {
+        freeppinfo();
         return -1; //no entries space left 
     }
 
@@ -74,7 +74,7 @@ int fs_mkdir(const char *pathname, mode_t mode){
     // ppinfo.parent[index].size=newdir[0].size;
     // writeDir(ppinfo.parent);
     // ppinfo.lastElementIndex = index;
-
+    freeppinfo();
     return 0;
 }
 
@@ -92,7 +92,7 @@ int findUnusedDE(struct dirEntry* entry) {
     if (entry == NULL) {
         return -1;
     }
-    int numEntries = entry->dirSize;
+    int numEntries = entry->entry_amount;
     // iterate through all directory entires
     for (int i = 0; i < numEntries; i++) {
         //if found null ternimate then return index
@@ -111,7 +111,7 @@ int isDirectory(struct dirEntry* entry) {
 
 // find directory by it name 
 int findDirEntry(struct dirEntry* entry, char* name) {
-    int numEntries = entry->dirSize;
+    int numEntries = entry->entry_amount;
     // iterate all directory entires 
     for (int i = 0; i < numEntries; i++) {
         // if any name match return index 
@@ -127,9 +127,9 @@ struct dirEntry* loadDir(struct dirEntry* entry) {
         return NULL;
     }
     struct dirEntry* loadDir;
-    int startBlock = entry->location;
+    int startBlock = entry->dir_index;
 
-    int blocksNeeded = entry->dirSize;
+    int blocksNeeded = entry->entry_amount;
     int bytesNeeded = blocksNeeded * MINBLOCKSIZE;
 
     loadDir = malloc(bytesNeeded);
@@ -209,4 +209,25 @@ int parsePath(char* path, struct pp_return_struct* ppinfo) {
         tokenOne = tokenTwo;
     }
     return -2;
+}
+
+// free ppinfo
+void freeLastElementName() {
+    if (ppinfo.lastElementName) {
+        free(ppinfo.lastElementName);
+        ppinfo.lastElementName = NULL;
+    }
+}
+void freePathParent() {
+    if (ppinfo.parent) {
+        if (ppinfo.parent != cwDir && ppinfo.parent != rootDir) {
+            free(ppinfo.parent);
+        }
+        ppinfo.parent = NULL;  
+    }
+}
+void freeppinfo() {
+    ppinfo.lastElementIndex = -1;
+    freeLastElementName();
+    freePathParent();
 }
