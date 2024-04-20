@@ -170,7 +170,7 @@ int parsePath(char* path, struct pp_return_struct* ppinfo) {
         if (copyPath[0] !=  '/'){//Nothing specified invalid path
             return -1; //invalid path
         }
-        else  { 
+        else  {  // specified root 
             ppinfo->parent = parent; // root is their own parent
             ppinfo->lastElementName = NULL; // no name 
             ppinfo->lastElementIndex = -2; // NOT exist 
@@ -182,9 +182,10 @@ int parsePath(char* path, struct pp_return_struct* ppinfo) {
         char* tokenTwo = strtok_r(NULL, "/", &saveptr); //token the last element
         int index = findDirEntry(parent, tokenOne);//Check if it is DE 
         if (tokenTwo == NULL) { // On last element 
-            ppinfo->parent = parent;
+            ppinfo->parent = parent; //EQUAL ROOT 
             ppinfo->lastElementName = strdup(tokenOne);
             ppinfo->lastElementIndex = index;
+            // printf("parse path parent name check: %s\n",ppinfo->parent->fileName);
             return 0; //reach end of file
         }
 
@@ -195,9 +196,9 @@ int parsePath(char* path, struct pp_return_struct* ppinfo) {
         if (!isDirectory(&parent[index])) { // must be directory 
             return -1; //invalid path
         }
+
         // load directory of address of parent index 
         struct dirEntry* tempparent = loadDir(&parent[index]);
-
         //Free the directory entry we won't be using before assigning the next
         if (parent != startparent) {
             free(parent);

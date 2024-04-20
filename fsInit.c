@@ -66,6 +66,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	// 	bitmap_status = get_bit(fsmap, i);
 	// 	printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
 	// } 
+
 	// write 1 blocks starting from block 0 after All initialize 
 	if (LBAwrite(VCB, 1, 0) != 1) {
         printf("Failed to write Volume contorl block.\n");
@@ -157,34 +158,34 @@ int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
 	//Directory entry zero, cd dot should point current
 	set_Dir(".",0,dirEntryAmount,dirEntries,location);
 
-	//buffer of parent 
+	//buffer of parent(ex.cwd root) 
     struct dirEntry* parent = &dirEntries[0];
 	//If parent is provided include root directory
     if (ppinfo != NULL && ppinfo->parent != NULL) {
 		parent = ppinfo->parent;
+		// parepath return avaiable free space index
+		int index =ppinfo->lastElementIndex;
+		//copy the name of new directory to parent(ex.root entries) of new directory 
+		strcpy(parent[index].fileName, ppinfo->lastElementName);
 
-		//Copy directory entry to its parent's free entry slot
-		strcpy(parent[ppinfo->lastElementIndex].fileName, ppinfo->lastElementName);
-		parent[ppinfo->lastElementIndex].isDirectory = dirEntries[0].isDirectory;
+		parent[index].isDirectory = dirEntries[0].isDirectory;//set as direcotry
 
-		parent[ppinfo->lastElementIndex].dir_index = location->start;  
-		parent[ppinfo->lastElementIndex].dir_size = location->count;
+		parent[index].dir_index = location->start;//get the new free spce allocate   
+		parent[index].dir_size = location->count; //amount of free space allocate
 		
-		parent[ppinfo->lastElementIndex].entry_amount = dirEntries[0].entry_amount;
+		parent[index].entry_amount = dirEntries[0].entry_amount;//set amount of entries
 
-		parent[ppinfo->lastElementIndex].createDate = dirEntries[0].createDate;
-		parent[ppinfo->lastElementIndex].modifyDate = dirEntries[0].modifyDate;
-		printf("Your parent address: %p \n", (void *)ppinfo->parent);
-		//Write to the volume starting where the parent starts
-		LBAwrite(parent, block_num, parent[0].dir_index);
+		parent[index].createDate = dirEntries[0].createDate;//set time for new dir
+		parent[index].modifyDate = dirEntries[0].modifyDate;//set time for new dir
+		//Update the root dictory back to disk 
+		LBAwrite(parent, block_num, VCB->root_dir_index);
 	}
 	
 	//Root Directory entry one, cd dot dot should point itself
-	set_Dir("..",1,dirEntryAmount,dirEntries,location);
+	set_Dir("..",1,dirEntryAmount,dirEntries,location); //ERROR NEED change 
 
-    // Write ROOT directory in number of block starting after bitmap block
-	// printf("write %ld blocks of direntries from index %ld\n",VCB->root_dir_size, VCB->root_dir_index);
-    LBAwrite(dirEntries,VCB->root_dir_size, VCB->root_dir_index);
+    // Write amount of block from index get by allocateSpace to directory  entries
+    LBAwrite(dirEntries,location->count, location->start);
 	//Finally free directory if not root, keep track of the root and current directories
     if (ppinfo && ppinfo->parent) {
         free(dirEntries);
@@ -196,13 +197,14 @@ int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
 	VCB->root_dir_index = location->start; //set root index only when inital 
 	VCB->root_dir_size = location->count; // amount of blocks of Root Dir 
 
-    printf("Created directory using %d blocks starting at block %d\n", block_num, location->start);
+    // printf("Created directory using %d blocks starting at block %d\n", block_num, location->start);
+	// int bitmap_status ;
+	// for(int i=0;i<=64;i++){
+	// 	bitmap_status = get_bit(fsmap, i);
+	// 	printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
+	// } 
 
     return location->start;
-	// strcpy(ppinfo.parent[index].name , ppinfo.lastElementName);
-    // ppinfo.parent[index].size=newdir[0].size;
-    // writeDir(ppinfo.parent);
-    // ppinfo.lastElementIndex = index;
 }
 
 void set_Dir(
