@@ -56,9 +56,25 @@ int fs_mkdir(const char *pathname, mode_t mode){
     if(result == -1){ 
         return -1; //invalid path
     }
+
+    //If directory exist or not 
     if(ppinfo.lastElementIndex!=-1){
         return -1; //already exist 
     }
+
+    // DE * newdir = createDirectory(50,ppinfo.parent);
+
+    int index = findUnusedDE(ppinfo.parent);
+    printf("-------------------Find unused DE index %d -------------------\n",index);
+    if (index == -1) {
+        return -1;
+    }
+    
+    // strcpy(ppinfo.parent[index].name,ppinfo.lastElementName);
+    // ppinfo.parent[index].size=newdir[0].size;
+    // writeDir(ppinfo.parent);
+    // ppinfo.lastElementIndex = index;
+    // int startBlock = initDirectory(MAX_DIRECTORY_ENTRY_AMOUNT, &pathInfo);
 
     return 0;
 }
@@ -72,16 +88,30 @@ int fs_stat(const char *path, struct fs_stat *buf);
 
 //**************helper function for parePath**************
 
+int findUnusedDE(struct dirEntry* entry) {
+    if (entry == NULL) {
+        return -1;
+    }
+    int numEntries = entry->dirSize;
+    for (int i = 0; i < numEntries; i++) {
+        if (entry[i].fileName[0] == '\0') {
+            return i;
+        }
+    }
+    return -1;
+}
+
+
 //check if it mark as directory 
 int isDirectory(struct dirEntry* entry) {
     return entry->isDirectory & 1; //0 as false and 1 as is directory 
 }
 
 // find directory by it name 
-int findDirEntry(struct dirEntry* dirEntries, char* name) {
-    int numEntries = dirEntries->dirSize;
+int findDirEntry(struct dirEntry* entry, char* name) {
+    int numEntries = entry->dirSize;
     for (int i = 0; i < numEntries; i++) {
-        if (strcmp(dirEntries[i].fileName, name) == 0) {
+        if (strcmp(entry[i].fileName, name) == 0) {
             return i; //return index of directory entries 
         }
     }
