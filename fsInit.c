@@ -56,7 +56,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	//**************************Root**************************//
 
 
-	if (createDirectory(MIN_DE) == -1) {
+	if (createDirectory(MIN_DE,NULL) == -1) {
         return -1; //fail to inital Root directory  
     }
 
@@ -117,14 +117,11 @@ int initVolumeControlBlock(uint64_t numberOfBlocks){
 	VCB->block_size = numberOfBlocks; //amount of block size
 }
 
-
-int createDirectory(uint64_t entries_number) {
+int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
 	int dirEntrySize = sizeof(struct dirEntry); // directory entry size (ex.60 bytes)
     int dirEntry_bytes =  dirEntrySize * entries_number ; // byte needed for Root directory (ex.3000 bytes)
     int block_num = (dirEntry_bytes + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; //floor operator (ex.6 blocks)
 	int block_byte  = block_num * MINBLOCKSIZE; // The actual size we can allocated by block (ex.3072 bytes)
-	// printf("\n block byte : %d",block_byte);
-	// printf("\ndir entry size: %d",dirEntrySize);
 	int dirEntryAmount = block_byte / dirEntrySize; // result in less waste  (ex.3072/60 = 51 entries)
 	dirEntry_bytes = dirEntrySize * dirEntryAmount; // update the actual byte dirtory could allocate  (ex.60*51= 3060)
 	
@@ -137,49 +134,103 @@ int createDirectory(uint64_t entries_number) {
 	    return -1;
 	}
 
-	VCB->root_dir_index = location->start; //set root index only when inital 
-	VCB->root_dir_size = location->count; // amount of blocks of Root Dir 
+	// if location of start return negative or exceed limit
+    // if (location->start == -1 || location->count != dirEntryAmount) {
+    //     free(location);
+    //     return -1; // return error 
+    // }
 
-
-	// pointer to an array of directory entries
+	// Create a pointer to an array of directory entries
 	struct dirEntry *dirEntries = malloc(dirEntry_bytes);
     if (!dirEntries) {
-        printf("Directory failed to allocate memory.\n");
+        printf("Directory failed to allocate dicttory memory.\n");
         return -1;
     }
 
     // Initialize Root directory entries
 	for (int i = 0; i < dirEntryAmount; i++) {
 		dirEntries[i].fileName[0] = '\0';// Null terminated  
-		dirEntries[i].isDirectory = 0;
+		// dirEntries[i].isDirectory = 0;
 	}
 
+	
 	//Directory entry zero, cd dot should point current
-	set_Dir(dirEntries,location,0,".",dirEntryAmount);
+	set_Dir(".",0,dirEntryAmount,dirEntries,location);
 
+	//buffer of parent 
+    struct dirEntry* parent = &dirEntries[0];
+	//If parent is provided include root directory
+    if (ppinfo != NULL && ppinfo->parent != NULL) {
+		parent = ppinfo->parent;
 
+		//Copy directory entry to its parent's free entry slot
+		strcpy(parent[ppinfo->lastElementIndex].fileName, ppinfo->lastElementName);
+		parent[ppinfo->lastElementIndex].isDirectory = dirEntries[0].isDirectory;
+
+		parent[ppinfo->lastElementIndex].dir_index = location->start;  
+		parent[ppinfo->lastElementIndex].dir_size = location->count;
+		
+		parent[ppinfo->lastElementIndex].entry_amount = dirEntries[0].entry_amount;
+
+		parent[ppinfo->lastElementIndex].createDate = dirEntries[0].createDate;
+		parent[ppinfo->lastElementIndex].modifyDate = dirEntries[0].modifyDate;
+		printf("Your parent address: %p \n", (void *)ppinfo->parent);
+		//Write to the volume starting where the parent starts
+		LBAwrite(parent, block_num, parent[0].dir_index);
+	}
+	
 	//Root Directory entry one, cd dot dot should point itself
-	set_Dir(dirEntries,location,1,"..",dirEntryAmount);
+	set_Dir("..",1,dirEntryAmount,dirEntries,location);
 
     // Write ROOT directory in number of block starting after bitmap block
 	// printf("write %ld blocks of direntries from index %ld\n",VCB->root_dir_size, VCB->root_dir_index);
     LBAwrite(dirEntries,VCB->root_dir_size, VCB->root_dir_index);
-	rootDir = dirEntries;
-    cwDir = rootDir;
-    return 0;
+	//Finally free directory if not root, keep track of the root and current directories
+    if (ppinfo && ppinfo->parent) {
+        free(dirEntries);
+    } else {
+       	rootDir = dirEntries;
+    	cwDir = rootDir;   
+    }
+	//Assign length to Volume Control Block
+	VCB->root_dir_index = location->start; //set root index only when inital 
+	VCB->root_dir_size = location->count; // amount of blocks of Root Dir 
+
+    printf("Created directory using %d blocks starting at block %d\n", block_num, location->start);
+
+    return location->start;
+	// strcpy(ppinfo.parent[index].name , ppinfo.lastElementName);
+    // ppinfo.parent[index].size=newdir[0].size;
+    // writeDir(ppinfo.parent);
+    // ppinfo.lastElementIndex = index;
 }
 
-	void set_Dir(struct dirEntry *dirEntries, struct extent *location,int index,char *name,int dirEntryAmount){
+void set_Dir(
+	char *name,
+	int index,
+	int dirEntryAmount,
+	struct dirEntry *dirEntries, 
+	struct extent *location
+	){	
+	// Get current time
 	time_t current_time;
 	time(&current_time);
+
+	// Copy name to directory entry
 	strcpy(dirEntries[index].fileName, name);
-	// printf("what is my %d root index? %ld \n",index,VCB->root_dir_index);
-	dirEntries[index].dir_index = location->start;
-	dirEntries[index].dir_size = location->count;
-	dirEntries[index].isDirectory = 1; //Root is a directory
-	dirEntries[index].entry_amount = dirEntryAmount;
-	dirEntries[index].createDate = current_time;
-	dirEntries[index].modifyDate = current_time;
+	// Set directory flag
+	dirEntries[index].isDirectory = 1; 
+
+    // Set directory index and size
+    dirEntries[index].dir_index = location->start;
+    dirEntries[index].dir_size = location->count;
+
+    // Set entry amount
+    dirEntries[index].entry_amount = dirEntryAmount;
+
+    // Set creation and modification dates
+    dirEntries[index].createDate = current_time;
+    dirEntries[index].modifyDate = current_time;
 }
 
 

@@ -69,11 +69,8 @@ int fs_mkdir(const char *pathname, mode_t mode){
 
     // DE * newdir = createDirectory(50,ppinfo.parent);
     ppinfo.lastElementIndex = index; //update info index where free space locate 
-    // createDirectory(MIN_DE, &ppinfo);
-    // strcpy(ppinfo.parent[index].name , ppinfo.lastElementName);
-    // ppinfo.parent[index].size=newdir[0].size;
-    // writeDir(ppinfo.parent);
-    // ppinfo.lastElementIndex = index;
+    createDirectory(MIN_DE, &ppinfo);
+
     freeppinfo();
     return 0;
 }

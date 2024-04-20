@@ -18,7 +18,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <time.h>
+#include "mfs.h"
+#include "fsInit.h"
 #include "bitmap.h"
+
 #define MAX_FILENAME_LENGTH 256
 #define MIN_DE 50
 
@@ -56,12 +59,18 @@ struct vcb
 	int get_bit(char* bitmap, int position);
 	void clear_bit(char* bitmap, int position);
 
-	void set_Dir(struct dirEntry *dirEntries, struct extent *location,int index,char *name,int dirEntryAmount);
-
+	void set_Dir(
+		char *name,
+		int index,
+		int dirEntryAmount,
+		struct dirEntry *dirEntries, 
+		struct extent *location
+	);
+	
 	//**************************Helper function**************************//
 	int initVolumeControlBlock(uint64_t numberOfBlocks);
 	int initFreeSpace(uint64_t numberOfBlocks);
-	int createDirectory(uint64_t numberOfBlocks);
+	int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo);
 
 	void set_bit(char* bitmap, int position);
 	int get_bit(char* bitmap, int position);

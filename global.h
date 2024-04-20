@@ -16,7 +16,7 @@
 #ifndef _GLOBAL_H
 #define _GLOBAL_H
 
-extern struct pp_return_struct ppinfo; //global pare path info
+extern struct pp_return_struct ppinfo; //global parse path info
 
 extern struct vcb *VCB; // Volume control block pointer
 extern char * fsmap; //pointer for free space(bitmap)
