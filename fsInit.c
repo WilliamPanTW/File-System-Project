@@ -56,7 +56,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	//**************************Root**************************//
 
 
-	if (initRootDir(MIN_DE) == -1) {
+	if (createDirectory(MIN_DE) == -1) {
         return -1; //fail to inital Root directory  
     }
 
@@ -118,7 +118,7 @@ int initVolumeControlBlock(uint64_t numberOfBlocks){
 }
 
 
-int initRootDir(uint64_t entries_number) {
+int createDirectory(uint64_t entries_number) {
 	int dirEntrySize = sizeof(struct dirEntry); // directory entry size (ex.60 bytes)
     int dirEntry_bytes =  dirEntrySize * entries_number ; // byte needed for Root directory (ex.3000 bytes)
     int block_num = (dirEntry_bytes + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; //floor operator (ex.6 blocks)
@@ -127,7 +127,7 @@ int initRootDir(uint64_t entries_number) {
 	// printf("\ndir entry size: %d",dirEntrySize);
 	int dirEntryAmount = block_byte / dirEntrySize; // result in less waste  (ex.3072/60 = 51 entries)
 	dirEntry_bytes = dirEntrySize * dirEntryAmount; // update the actual byte dirtory could allocate  (ex.60*51= 3060)
-
+	
 	//encapsulate the functionality for other freespace system  
 	int min_block_count=block_num;
 	//allocate free space with the minimum and maximum(block size) limit  

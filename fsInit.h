@@ -58,7 +58,7 @@ struct vcb
 	//**************************Helper function**************************//
 	int initVolumeControlBlock(uint64_t numberOfBlocks);
 	int initFreeSpace(uint64_t numberOfBlocks);
-	int initRootDir(uint64_t numberOfBlocks);
+	int createDirectory(uint64_t numberOfBlocks);
 
 	void set_bit(char* bitmap, int position);
 	int get_bit(char* bitmap, int position);

@@ -22,6 +22,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+//global pare path info
+struct pp_return_struct ppinfo;
 
   
 // Misc directory functions
@@ -48,33 +50,30 @@ int fs_closedir(fdDir *dirp);
 // Key directory functions
 int fs_mkdir(const char *pathname, mode_t mode){
     int result;
-    struct pp_return_struct ppinfo;
+    
     result = parsePath((char*)pathname, &ppinfo);
-    printf("RESULTTTTTTTTTTTTTTTTTTTTTTT: %d \n",result);
-    printf("ppinfo.lastElementIndex: %d \n",ppinfo.lastElementIndex);
-
     if(result == -1){ 
         return -1; //invalid path
     }
 
-    //If directory exist or not 
+    //Check the directory is not exist to create new directory  
     if(ppinfo.lastElementIndex!=-1){
         return -1; //already exist 
     }
 
-    // DE * newdir = createDirectory(50,ppinfo.parent);
-
+    //find free directory entries
     int index = findUnusedDE(ppinfo.parent);
-    printf("-------------------Find unused DE index %d -------------------\n",index);
     if (index == -1) {
-        return -1;
+        return -1; //no entries space left 
     }
-    
-    // strcpy(ppinfo.parent[index].name,ppinfo.lastElementName);
+
+    // DE * newdir = createDirectory(50,ppinfo.parent);
+    ppinfo.lastElementIndex = index; //update info index where free space locate 
+    // createDirectory(MIN_DE, &ppinfo);
+    // strcpy(ppinfo.parent[index].name , ppinfo.lastElementName);
     // ppinfo.parent[index].size=newdir[0].size;
     // writeDir(ppinfo.parent);
     // ppinfo.lastElementIndex = index;
-    // int startBlock = initDirectory(MAX_DIRECTORY_ENTRY_AMOUNT, &pathInfo);
 
     return 0;
 }
@@ -88,17 +87,20 @@ int fs_stat(const char *path, struct fs_stat *buf);
 
 //**************helper function for parePath**************
 
+
 int findUnusedDE(struct dirEntry* entry) {
     if (entry == NULL) {
         return -1;
     }
     int numEntries = entry->dirSize;
+    // iterate through all directory entires
     for (int i = 0; i < numEntries; i++) {
+        //if found null ternimate then return index
         if (entry[i].fileName[0] == '\0') {
             return i;
         }
     }
-    return -1;
+    return -1;//nothing found return error 
 }
 
 
@@ -110,9 +112,11 @@ int isDirectory(struct dirEntry* entry) {
 // find directory by it name 
 int findDirEntry(struct dirEntry* entry, char* name) {
     int numEntries = entry->dirSize;
+    // iterate all directory entires 
     for (int i = 0; i < numEntries; i++) {
+        // if any name match return index 
         if (strcmp(entry[i].fileName, name) == 0) {
-            return i; //return index of directory entries 
+            return i;  
         }
     }
     return -1;//no directory found 
@@ -157,13 +161,12 @@ int parsePath(char* path, struct pp_return_struct* ppinfo) {
         startparent = rootDir; //already loaded into memroy ROOT
     }else{
         startparent = cwDir;//alread loaded into memory CWD
-        printf("--------------Suppose startParent: %p--------------\n",(void*)startparent); 
     }
     
     struct dirEntry* parent = startparent;
     char* saveptr;
     char* tokenOne = strtok_r(copyPath, "/", &saveptr);
-    printf("--------------Path name token1: %s--------------\n",tokenOne); //pathname 
+    // printf("--------------Path name token1: %s--------------\n",tokenOne); //pathname 
 
     // cd "/" to root OR invalid path
     if (tokenOne == NULL) {
@@ -179,16 +182,12 @@ int parsePath(char* path, struct pp_return_struct* ppinfo) {
     }
 
     while (tokenOne != NULL) {  // find if it in directory 
-        char* tokenTwo = strtok_r(NULL, "/", &saveptr); 
-        printf("--------------NULL Last elemenet:  %s--------------\n",tokenTwo);//NULL last element 
-
-        int index = findDirEntry(parent, tokenOne);//return if it valid diretory
-        printf("--------------No findDirEntry %d--------------\n",index);
+        char* tokenTwo = strtok_r(NULL, "/", &saveptr); //token the last element
+        int index = findDirEntry(parent, tokenOne);//Check if it is DE 
         if (tokenTwo == NULL) { // On last element 
             ppinfo->parent = parent;
             ppinfo->lastElementName = strdup(tokenOne);
             ppinfo->lastElementIndex = index;
-            printf("--------Name of parent[index]: %d-----\n", parent[index].isDirectory);
             return 0; //reach end of file
         }
 
