@@ -13,7 +13,9 @@
         "string.h": "c",
         "history.h": "c",
         "getopt.h": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "mfs_helper.h": "c",
+        "global.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

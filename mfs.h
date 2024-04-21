@@ -97,23 +97,6 @@ struct fs_stat
 	};
 
 int fs_stat(const char *path, struct fs_stat *buf);
-//**************helper function for parePath**************
-
-int findUnusedDE(struct dirEntry* entry);
-
-int parsePath(char* path, struct pp_return_struct* ppinfo);
-
-int findDirEntry(struct dirEntry* entry, char* name);
-
-int isDirectory(struct dirEntry* entry);
-
-struct dirEntry* loadDir(struct dirEntry* entry);
-
-void freeLastElementName();
-
-void freePathParent();
-
-void freeppinfo();
 
 #endif
 

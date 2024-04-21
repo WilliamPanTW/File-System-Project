@@ -153,7 +153,7 @@ int initFreeSpace(uint64_t block_amount) {
 
 	//inital vcb 
 	VCB->bit_map_size=bitmap_needed_block;
-    VCB->free_block_index = VCB->bit_map_index+VCB->bit_map_size;
+    VCB->free_block_index = VCB->bit_map_index + VCB->bit_map_size;
 	if (VCB->bit_map_size == -1) {
         printf("Failed to find a free block.\n");
         free(fsmap);

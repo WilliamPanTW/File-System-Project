@@ -181,7 +181,6 @@ int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
 		LBAwrite(parent, block_num, VCB->root_dir_index);
 	}
 	
-	// set_Dir("..",1,dirEntryAmount,dirEntries,location); //ERROR NEED change 
 	strcpy(dirEntries[1].fileName, "..");
 	dirEntries[1].entry_amount = parent->entry_amount;
     dirEntries[1].dir_index = parent->dir_index;
@@ -190,6 +189,7 @@ int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
     dirEntries[1].modifyDate = parent->modifyDate;
     dirEntries[1].isDirectory = parent->isDirectory;
 	
+	printf("Created directory using %d blocks starting at block %d\n", block_num, location->start);
     // Write amount of block from index get by allocateSpace to directory  entries
     LBAwrite(dirEntries,location->count, location->start);
 
@@ -204,7 +204,7 @@ int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
 	VCB->root_dir_index = location->start; //set root index only when inital 
 	VCB->root_dir_size = location->count; // amount of blocks of Root Dir 
 
-    // printf("Created directory using %d blocks starting at block %d\n", block_num, location->start);
+	free(location);
 	// int bitmap_status ;
 	// for(int i=0;i<=64;i++){
 	// 	bitmap_status = get_bit(fsmap, i);
