@@ -23,7 +23,10 @@
 #include "fsLow.h"
 #include "global.h"
 //*********************************Rm command *********************************
+
+// check if directory entry is empty 
 int isDirEntryEmpty(struct dirEntry* dir) {
+    // IF is not empty then this function will not succeed. 
     if (dir == NULL) {
         return -1;
     }
@@ -36,16 +39,6 @@ int isDirEntryEmpty(struct dirEntry* dir) {
     return 1;
 }
 
-int writeDirToDisk(struct dirEntry* entry) {
-    time_t t = time(NULL);
-    entry->modifyDate = t;
-    return LBAwrite(entry, entry->dir_size, entry->dir_index);
-}
-
-int setDirEntryUnused(struct dirEntry* dir) {
-    dir->fileName[0] = '\0';
-    return 0;
-}
 
 void deallocateSpace(uint64_t startBlock, uint64_t numberOfBlocks) {
     if (startBlock < 0 || startBlock >= VCB->block_size) {
@@ -57,8 +50,19 @@ void deallocateSpace(uint64_t startBlock, uint64_t numberOfBlocks) {
     LBAwrite(fsmap, VCB->bit_map_size, VCB->bit_map_size);
 }
 
+//Free extents associated with file
+int freeExtents(struct dirEntry* entry) {
+    for (int i = 0; entry->dir_index != 0; i++) {
+        printf("Deallocate space start block : %d to num of block:%d \n",
+            entry->dir_index,entry->dir_size);
+        deallocateSpace(entry->dir_index, entry->dir_size);
+        entry->dir_index = 0;
+        entry->dir_size = 0;
+    }
+}
 //**********************************Parse Path*********************************
 
+//Iterate through array of directory entries to find unused entry
 int findUnusedDE(struct dirEntry* entry) {
     if (entry == NULL) {
         return -1;
@@ -93,6 +97,7 @@ int findDirEntry(struct dirEntry* entry, char* name) {
     return -1;//no directory found 
 }
 
+//Loads a directory entry from disk into memory
 struct dirEntry* loadDir(struct dirEntry* entry) {
     if (entry == NULL) {
         return NULL;
@@ -100,7 +105,7 @@ struct dirEntry* loadDir(struct dirEntry* entry) {
     struct dirEntry* loadDir;
     int startBlock = entry->dir_index;
 
-    int blocksNeeded = entry->entry_amount;
+    int blocksNeeded = entry->dir_size; 
     int bytesNeeded = blocksNeeded * MINBLOCKSIZE;
 
     loadDir = malloc(bytesNeeded);

@@ -29,6 +29,36 @@
 char * fs_getcwd(char *pathname, size_t size);
 int fs_setcwd(char *pathname);   //linux chdir
 
+//return 1 if directory, 0 otherwise
+int fs_isDir(char * pathname) {
+    if (parsePath(pathname, &ppinfo) != 0) {
+        return -1;
+    }
+
+    struct dirEntry* entry = cwDir;
+
+    //If the directory doesn't exists
+    if (ppinfo.lastElementIndex == -1) {
+        if (ppinfo.lastElementName != NULL) {
+            freeppinfo();
+            return -1;
+        }
+        entry = ppinfo.parent;
+    } else {
+        entry = &ppinfo.parent[ppinfo.lastElementIndex];
+    }
+
+    if (isDirectory(entry)) {
+        printf("You are directory\n");
+        freeppinfo();
+        return 1;//It's directory
+    }
+    printf("why are you not directory?\n");
+    freeppinfo();
+    return 0;
+}
+
+
 //return 1 if file, 0 otherwise
 int fs_isFile(char * filename) {
     if (parsePath(filename, &ppinfo) != 0) {
@@ -53,33 +83,6 @@ int fs_isFile(char * filename) {
     freePathParent();
     return 0;
 }	
-
-//return 1 if directory, 0 otherwise
-int fs_isDir(char * pathname) {
-    if (parsePath(pathname, &ppinfo) != 0) {
-        return -1;
-    }
-
-    struct dirEntry* entry = cwDir;
-
-    //If the directory doesn't exists
-    if (ppinfo.lastElementIndex == -1) {
-        if (ppinfo.lastElementName != NULL) {
-            freeppinfo();
-            return -1;
-        }
-        entry = ppinfo.parent;
-    } else {
-        entry = &ppinfo.parent[ppinfo.lastElementIndex];
-    }
-
-    if (isDirectory(entry)) {
-        freeppinfo();
-        return 1;//It's directory
-    }
-    freeppinfo();
-    return 0;
-}
 
 //removes a file
 int fs_delete(char* filename){
@@ -108,16 +111,18 @@ int fs_delete(char* filename){
         return -1;
     }
 
-    // //Free extents associated with file
-    // freeExtents(entry); //TODO 
+    //Free extents associated with file
+    freeExtents(entry);  
 
     //Set directory as unused in its parent
-    setDirEntryUnused(entry);
+    entry->fileName[0] = '\0'; //TO DO only array 0 will be null ternimate 
 
-    //Finally write the changes to disk
-    writeDirToDisk(ppinfo.parent);
+    // Write DIR changes back disk
+    LBAwrite(ppinfo.parent, entry->dir_size, entry->dir_index);
+
     
     freePathParent();
+    printf("I don't think it was remove\n");
     return 0;
 }	
 
@@ -198,15 +203,18 @@ int fs_rmdir(const char *pathname) {
     entry = &ppinfo.parent[ppinfo.lastElementIndex];
 
     //Free blocks associated with directory
+    printf("deallocate from %d index to %d blocks:\n", entry->dir_index,entry->dir_size);
     deallocateSpace(entry->dir_index, entry->dir_size);
 
     //Set directory as unused in its parent
-    setDirEntryUnused(entry);
+    entry->fileName[0] = '\0'; //TO DO only array 0 will be null ternimate 
 
-    //Finally write the changes to disk
-    writeDirToDisk(ppinfo.parent);
+    // Write DIR changes back disk
+    LBAwrite(ppinfo.parent, entry->dir_size, entry->dir_index);
 
     freePathParent();
+
+    printf("I don't think you free sucess\n");
     return 0;
 }
 

@@ -22,23 +22,30 @@
 #include "global.h"
 
 //****************************Rm command ****************************
+
+// check if directory entry is empty 
 int isDirEntryEmpty(struct dirEntry* dir);
-
-int writeDirToDisk(struct dirEntry* entry);
-
-int setDirEntryUnused(struct dirEntry* dir);
 
 void deallocateSpace(uint64_t startBlock, uint64_t numberOfBlocks);
 
-//****************************Parse Path****************************
-int findUnusedDE(struct dirEntry* entry);
+//Free extents associated with file
+int freeExtents(struct dirEntry* entry);
 
+//****************************Parse Path****************************
+
+//check if this entries is good or not 
 int parsePath(char* path, struct pp_return_struct* ppinfo);
 
+//Iterate through array of directory entries to find unused entry
+int findUnusedDE(struct dirEntry* entry);
+
+//find directory by it name 
 int findDirEntry(struct dirEntry* entry, char* name);
 
+//check if it mark as directory 
 int isDirectory(struct dirEntry* entry);
 
+//Loads a directory entry from disk into memory
 struct dirEntry* loadDir(struct dirEntry* entry);
 //****************************Free space****************************
 void freeLastElementName();
