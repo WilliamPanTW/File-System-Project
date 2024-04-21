@@ -181,12 +181,19 @@ int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
 		LBAwrite(parent, block_num, VCB->root_dir_index);
 	}
 	
-	//Root Directory entry one, cd dot dot should point itself
-	set_Dir("..",1,dirEntryAmount,dirEntries,location); //ERROR NEED change 
-
+	// set_Dir("..",1,dirEntryAmount,dirEntries,location); //ERROR NEED change 
+	strcpy(dirEntries[1].fileName, "..");
+	dirEntries[1].entry_amount = parent->entry_amount;
+    dirEntries[1].dir_index = parent->dir_index;
+    dirEntries[1].dir_size = parent->dir_size;
+    dirEntries[1].createDate = parent->createDate;
+    dirEntries[1].modifyDate = parent->modifyDate;
+    dirEntries[1].isDirectory = parent->isDirectory;
+	
     // Write amount of block from index get by allocateSpace to directory  entries
     LBAwrite(dirEntries,location->count, location->start);
-	//Finally free directory if not root, keep track of the root and current directories
+
+	//free directory if not root, keep track of the root and current directories
     if (ppinfo && ppinfo->parent) {
         free(dirEntries);
     } else {

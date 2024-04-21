@@ -116,7 +116,8 @@ struct extent* allocateSpace(uint64_t block_amount, uint64_t min_block_count) {
     
     // Update the free block that is used in VCB
     VCB->free_block_index += min_block_count;
-
+    LBAwrite(VCB, 1 , VCB->block_index);
+    
     return location;
 }
 
@@ -152,7 +153,7 @@ int initFreeSpace(uint64_t block_amount) {
 
 	//inital vcb 
 	VCB->bit_map_size=bitmap_needed_block;
-    VCB->free_block_index = VCB->bit_map_index;
+    VCB->free_block_index = VCB->bit_map_index+VCB->bit_map_size;
 	if (VCB->bit_map_size == -1) {
         printf("Failed to find a free block.\n");
         free(fsmap);
