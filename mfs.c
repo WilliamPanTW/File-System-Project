@@ -24,6 +24,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+char cwdPath[MAX_FILENAME_LENGTH] = "/"; //inital root string current working directory 
+char *cwdString = cwdPath; // global variable for the current working directory string
+
 
 /****************************************************************************************
 *  cd command 
@@ -37,10 +40,11 @@ int fs_setcwd(char *pathname);   //linux chdir
 *  PWD command and ls command  
 ****************************************************************************************/
 
-char * fs_getcwd(char *pathname, size_t size){
-    return 0;
+// provides CWD 
+char *fs_getcwd(char *pathbuffer, size_t size) {
+    // Copy the cwd string back to the buffer with the limit of size 
+    return strncpy(pathbuffer, cwdPath, size);
 }
-
 
 
 //return 1 if file, 0 otherwise
@@ -74,17 +78,62 @@ int fs_isFile(char * filename) {
 *  displayFiles for use by ls command
 ****************************************************************************************/
 
-struct fs_diriteminfo *fs_readdir(fdDir *dirp){
-    return 0;
 
+struct fs_diriteminfo *fs_readdir(fdDir *dirp) {
+    struct dirEntry* entry = dirp->directory;
+    while (dirp->dirEntryPosition <= dirp->d_reclen) {
+        entry = &dirp->directory[dirp->dirEntryPosition];
+        dirp->dirEntryPosition++;
+        if (entry->fileName[0] == '\0') {
+            continue;
+        }
+        struct fs_diriteminfo* info = dirp->di;
+        strncpy(info->d_name, entry->fileName, 256);
+        if (isDirectory(entry)) {
+            info->fileType = 'D';
+        } else {
+            info->fileType = 'F';
+        }
+        return info;
+    }
+    return NULL;//End of file or error 
 }
 
-int fs_stat(const char *path, struct fs_stat *buf){
+int fs_stat(const char *path, struct fs_stat *buf) {
+    if (buf == NULL) {
+        return -1;
+    }
+    if (parsePath((char*)path, &ppinfo) != 0) {
+        return -1;
+    }
+    if (ppinfo.lastElementIndex == -1) {
+        freeppinfo();
+        return -1;
+    }
+    struct dirEntry* entry = &ppinfo.parent[ppinfo.lastElementIndex];
+    
+    //Provide necessary information
+    if (isDirectory(entry)) {
+        buf->st_size = entry->entry_amount * sizeof(struct dirEntry*);
+    } else {
+        buf->st_size = entry->dir_size;
+    }
+    buf->st_blksize = MINBLOCKSIZE;
+    buf->st_blocks = entry->dir_size;
+    buf->st_accesstime = entry->modifyDate;
+    buf->st_modtime = entry->modifyDate;
+    buf->st_createtime = entry->createDate;
     return 0;
-
 }
 
-int fs_closedir(fdDir *dirp){
+int fs_closedir(fdDir *dirp) {
+    if (!dirp) {
+        return 0;
+    }
+    
+    free(dirp->directory);
+    free(dirp->di);
+    free(dirp);
     return 0;
 }
 
