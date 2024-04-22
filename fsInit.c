@@ -80,10 +80,10 @@ void exitFileSystem ()
 	{
 	//Free pinter prevent memory leak  
 
-	free(rootDir);
-	rootDir=NULL;
-	free(cwDir);
-	cwDir=NULL;
+	free(loadedRoot);
+	loadedRoot=NULL;
+	free(loadedCWD);
+	loadedCWD=NULL;
 
     free(fsmap); //bitmap
     fsmap = NULL;
@@ -197,8 +197,8 @@ int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
     if (ppinfo && ppinfo->parent) {
         free(dirEntries);
     } else {
-       	rootDir = dirEntries;
-    	cwDir = rootDir;   
+       	loadedRoot = dirEntries;
+    	loadedCWD = loadedRoot;   
     }
 	//Assign length to Volume Control Block
 	VCB->root_dir_index = location->start; //set root index only when inital 

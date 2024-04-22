@@ -146,9 +146,9 @@ int parsePath(char* path, struct pp_return_struct* ppinfo) {
 
     struct dirEntry* startparent;
     if (copyPath[0] == '/') {  //absolute
-        startparent = rootDir; //already loaded into memroy ROOT
+        startparent = loadedRoot; //already loaded into memroy ROOT
     }else{
-        startparent = cwDir;//alread loaded into memory CWD
+        startparent = loadedCWD;//alread loaded into memory CWD
     }
     
     struct dirEntry* parent = startparent;
@@ -211,7 +211,7 @@ void freeLastElementName() {
 }
 void freePathParent() {
     if (ppinfo.parent) {
-        if (ppinfo.parent != cwDir && ppinfo.parent != rootDir) {
+        if (ppinfo.parent != loadedCWD && ppinfo.parent != loadedRoot) {
             free(ppinfo.parent);
         }
         ppinfo.parent = NULL;  

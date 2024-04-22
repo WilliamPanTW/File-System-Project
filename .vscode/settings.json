@@ -15,7 +15,8 @@
         "getopt.h": "c",
         "typeinfo": "c",
         "mfs_helper.h": "c",
-        "global.h": "c"
+        "global.h": "c",
+        "limits": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

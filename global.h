@@ -21,7 +21,7 @@ extern struct pp_return_struct ppinfo; //global parse path info
 extern struct vcb *VCB; // Volume control block pointer
 extern char * fsmap; //pointer for free space(bitmap)
 
-extern struct dirEntry* rootDir; // Root pointer for mfs.c
-extern struct dirEntry* cwDir; // current working directory for mfs.c
+extern struct dirEntry* loadedRoot; // store memory address of root directory 
+extern struct dirEntry* loadedCWD; // store memory address of current working directory 
 
 #endif

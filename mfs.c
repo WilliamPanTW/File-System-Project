@@ -33,7 +33,43 @@ char *cwdString = cwdPath; // global variable for the current working directory 
 ****************************************************************************************/
 
 // Misc directory functions
-int fs_setcwd(char *pathname);   //linux chdir
+//linux chdir
+int fs_setcwd(char *pathname){
+
+    char tempPathName[MAX_FILENAME_LENGTH];
+    //Step.1 take the path specified 
+    strncpy(tempPathName, pathname, MAX_FILENAME_LENGTH);
+
+    //Step.2 call parsepath to check if it valid
+    if (parsePath((char*)pathname, &ppinfo) != 0) {
+        printf("Invalid path!\n");
+        return -1; //Invalid path!
+    }
+
+    struct dirEntry* temp;
+    //Step.3 Look at parent[index], is it a directory
+    if (ppinfo.lastElementIndex == -1) {
+        if (ppinfo.lastElementName != NULL) {
+            freeppinfo();
+            return -1; //exit failed
+        }
+        //At root
+        temp = ppinfo.parent;
+    } else {
+         //Step.4 Load Directory
+        temp = loadDir (&ppinfo.parent[ppinfo.lastElementIndex]);
+    }
+    //step.5 if loadedCWD != loadedRootDiractory - free (loadedCWD)
+     if (loadedCWD != loadedRoot && loadedCWD != ppinfo.parent) {
+        free(loadedCWD);
+    }
+    //step.6 loadedCWD = temp
+    loadedCWD = temp;
+
+   
+
+    return 0;
+}
 
 
 /****************************************************************************************
@@ -191,7 +227,7 @@ int fs_isDir(char * pathname) {
         return -1;
     }
 
-    struct dirEntry* entry = cwDir;
+    struct dirEntry* entry = loadedCWD;
 
     //If the directory doesn't exists
     if (ppinfo.lastElementIndex == -1) {

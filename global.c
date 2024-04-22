@@ -21,5 +21,5 @@ struct pp_return_struct ppinfo; //global parse path info
 struct vcb *VCB; //Volume control block pointer
 char * fsmap; //pointer for free space(bitmap)
 
-struct dirEntry* rootDir; // Root pointer for mfs.c
-struct dirEntry* cwDir; // current working directory for mfs
+struct dirEntry* loadedRoot; // Root pointer for mfs.c
+struct dirEntry* loadedCWD; // current working directory for mfs
