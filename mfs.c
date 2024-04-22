@@ -33,37 +33,64 @@ char *cwdString = cwdPath; // global variable for the current working directory 
 ****************************************************************************************/
 
 // Misc directory functions
-//linux chdir
+// Part1 file system needs 
 int fs_setcwd(char *pathname){
 
+    //Step.1 take the path specified to temp buffer
     char tempPathName[MAX_FILENAME_LENGTH];
-    //Step.1 take the path specified 
     strncpy(tempPathName, pathname, MAX_FILENAME_LENGTH);
 
     //Step.2 call parsepath to check if it valid
     if (parsePath((char*)pathname, &ppinfo) != 0) {
-        printf("Invalid path!\n");
-        return -1; //Invalid path!
+        printf("parse path detect invalid path\n");
+        return -1; //Invalid path
     }
 
     struct dirEntry* temp;
-    //Step.3 Look at parent[index], is it a directory
+    //Step.3 Check last element does not exist
     if (ppinfo.lastElementIndex == -1) {
-        if (ppinfo.lastElementName != NULL) {
-            freeppinfo();
-            return -1; //exit failed
-        }
-        //At root
-        temp = ppinfo.parent;
-    } else {
-         //Step.4 Load Directory
-        temp = loadDir (&ppinfo.parent[ppinfo.lastElementIndex]);
+        printf("setcwd: Last elements did not exist \n");
+        freeppinfo();
+        return -1; //exit failed
+    } 
+
+    //step.4 Look at parent[index], is it a directory
+     if (!isDirectory(&ppinfo.parent[ppinfo.lastElementIndex])) {
+        printf("setcwd: path is not directory \n");
+        freeppinfo();
+        return -1;
     }
-    //step.5 if loadedCWD != loadedRootDiractory - free (loadedCWD)
+
+    //Step.5 Load Directory
+    temp = ppinfo.parent;
+    temp = loadDir (&ppinfo.parent[ppinfo.lastElementIndex]);
+
+    //***************Part.2 updating the string for the user****************
+
+    //If start with absolute path("/"), copy the path
+    if (tempPathName[0] == '/') {
+        printf("it is absolute\n");
+        strncpy(cwdPath, tempPathName, MAX_FILENAME_LENGTH);// just copy path
+    } else { 
+        // If the path is relative
+        printf("it is relative\n");
+        strcat(cwdPath, tempPathName);//Concate with current working directory  
+    }
+    
+    // If (minus null ternimate)last character is not "/", append "/"
+    if (cwdPath[strlen(cwdPath) - 1] != '/') {
+        printf("charge to append\n");
+        strcat(cwdPath, "/");
+    }
+
+
+
+
+    //step.6 if loadedCWD != loadedRootDiractory - free (loadedCWD)
      if (loadedCWD != loadedRoot && loadedCWD != ppinfo.parent) {
         free(loadedCWD);
     }
-    //step.6 loadedCWD = temp
+    //step.7 loadedCWD = temp
     loadedCWD = temp;
 
    
