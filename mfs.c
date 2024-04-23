@@ -418,8 +418,9 @@ int fs_mkdir(const char *pathname, mode_t mode){
         return -1; //invalid path
     }
 
-    //Check the directory is not exist to create new directory  
+    //compare the new directory is exist or not
     if(ppinfo.lastElementIndex!=-1){
+        printf("mkdir: cannot create directory '%s' : File exists\n",pathname);
         freeppinfo();
         return -1; //already exist 
     }

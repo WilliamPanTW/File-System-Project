@@ -13,8 +13,6 @@
 * This file is where you will start and initialize your system
 *
 **************************************************************/
-
-//Hexdump/hexdump.linux SampleVolume --start 1 --count 2
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -32,6 +30,8 @@
 
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	{
+	printf ("Initializing File System with %ld blocks with a block size of %ld\n",
+			numberOfBlocks, blockSize);
 	/* TODO: Add any code you need to initialize your file system. */
 	//**************************VCB**************************//
 	VCB= malloc(MINBLOCKSIZE * sizeof(struct vcb));
@@ -146,7 +146,7 @@ int loadRootDirectory(uint64_t numberOfBlocks) {
 	for (int i = 0; i <= amount_bitmap; i++) {
 		set_bit(fsmap, i);
 	}
-
+	VCB->free_block_index=amount_bitmap; //load free block tracking data
     //Keep track of the root and current working directories
     loadedCWD = loadedRoot;
     return 0;
