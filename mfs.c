@@ -25,7 +25,7 @@
 #include <stdio.h>
 
 char cwdPath[MAX_FILENAME_LENGTH] = "/"; //inital root string current working directory 
-char *cwdString = cwdPath; // global variable for the current working directory string
+// char *cwdString = cwdPath; // global variable for the current working directory string
 
 
 /****************************************************************************************
@@ -46,7 +46,6 @@ int fs_setcwd(char *pathname){
         return -1; //Invalid path
     }
 
-    struct dirEntry* temp;
     //Step.3 Check last element does not exist
     if (ppinfo.lastElementIndex == -1) {
         printf("setcwd: Last elements did not exist \n");
@@ -62,6 +61,7 @@ int fs_setcwd(char *pathname){
     }
 
     //Step.5 Load Directory
+    struct dirEntry* temp;
     temp = ppinfo.parent;
     temp = loadDir (&ppinfo.parent[ppinfo.lastElementIndex]);
 
@@ -77,24 +77,58 @@ int fs_setcwd(char *pathname){
         strcat(cwdPath, tempPathName);//Concate with current working directory  
     }
     
-    // If (minus null ternimate)last character is not "/", append "/"
-    if (cwdPath[strlen(cwdPath) - 1] != '/') {
-        printf("charge to append\n");
-        strcat(cwdPath, "/");
+
+    char* saveptr;//track position of token
+    char* list[(MAX_FILENAME_LENGTH / 2) + 1];//vector table
+
+    char* currentToken  = strtok_r(cwdPath, "/", &saveptr);
+    char* token;//current tokenized substring
+
+    int listIndex = 0;
+    while (currentToken  != NULL) {
+
+    token = currentToken ;
+    currentToken  = strtok_r(NULL, "/", &saveptr);
+
+    // If token is ".", ignore it
+    if (strcmp(token, ".") == 0) {
+        continue;
+    } else if (strcmp(token, "..") == 0) {
+        if (listIndex > 0) {
+            listIndex -= 1;//If it's "dot dot"go back one directory
+        }
+        continue; //unless already at the root
+    }
+    list[listIndex] = token;//add in to the array of integers 
+    listIndex++;//increment index
+    }
+    
+    // build the new path based on processed
+    char newPath[MAX_FILENAME_LENGTH / 2] = "/";
+    for (int i = 0; i < listIndex; i++) {
+        char* element = list[i];
+        strcat(newPath, element);
+        if (i < listIndex - 1) {
+            strcat(newPath, "/");
+        }
+    }
+    strncpy(cwdPath, newPath, MAX_FILENAME_LENGTH);
+
+    // Ensure the current working directory ends with "/"
+    if (cwdPath[strlen(cwdPath)-1] != '/') {
+    // If last character is not "/", append "/"
+        strcat(cwdPath, "/");    
     }
 
 
-
-
-    //step.6 if loadedCWD != loadedRootDiractory - free (loadedCWD)
-     if (loadedCWD != loadedRoot && loadedCWD != ppinfo.parent) {
+    //step.6 if loadedCWD != loadedRootDiractory then free (loadedCWD)
+     if (loadedCWD != loadedRoot) {
         free(loadedCWD);
     }
     //step.7 loadedCWD = temp
     loadedCWD = temp;
 
-   
-
+    freeppinfo();
     return 0;
 }
 
