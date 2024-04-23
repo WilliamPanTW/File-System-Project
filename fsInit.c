@@ -32,22 +32,48 @@
 
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	{
-	printf ("Initializing File System with %ld blocks with a block size of %ld\n", numberOfBlocks, blockSize);
 	/* TODO: Add any code you need to initialize your file system. */
-
 	//**************************VCB**************************//
+	VCB= malloc(MINBLOCKSIZE * sizeof(struct vcb));
+    // Load vcb 
+	if (LBAread(VCB, 1, 0) != 1) {
+		printf("Failed to read first block.\n");
+		free(VCB);
+    	VCB = NULL;
+		return -1;
+	}
+
+	// if VCB is already inital
+	if (VCB->signature == vcbSIG) {
+		// printf("------------%11lx--------\n",vcbSIG);
+		printf("Volume already initialized.\n");
+
+        if (loadFreeSpace(numberOfBlocks) != 0) {
+            return -1;
+        }
+        if (loadRootDirectory(numberOfBlocks) != 0) {
+            return -1;
+        }
+
+		// int bitmap_status ;
+		// for(int i=0;i<=VCB->root_dir_index+VCB->root_dir_size;i++){
+		// 	bitmap_status = get_bit(fsmap, i);
+		// 	printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
+		// } 
+		return 0; // Volume already initialized, return success
+	}
 
 	if (initVolumeControlBlock(numberOfBlocks) == -1) {
         return -1; //fail to init Volume Control Block
     }
 
 	//**************************FreeSpace**************************//
-
+	//Use bitmap to track use block in free space
 	if (initFreeSpace(numberOfBlocks) == -1) {
         return -1; //fail to inital free space 
     }
 	
-	// int bitmap_status ;
+	// int bitmap_status;
 	// for(int i=0;i<=VCB->bit_map_size+1;i++){
 	// 	bitmap_status = get_bit(fsmap, i);
 	// 	printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
@@ -55,7 +81,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 
 	//**************************Root**************************//
 
-
+	//create root directory 
 	if (createDirectory(MIN_DE,NULL) == -1) {
         return -1; //fail to inital Root directory  
     }
@@ -72,6 +98,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
         printf("Failed to write Volume contorl block.\n");
         return -1;
     }
+	
 	return 0;
 	}
 	
@@ -97,21 +124,35 @@ void exitFileSystem ()
 	}
 
 	//**************************Helper function**************************//
+int loadFreeSpace(uint64_t numberOfBlocks) {
+    fsmap = malloc(VCB->bit_map_size * MINBLOCKSIZE);
+    if (!fsmap) {
+        return -1;
+    }
+    return 0;
+}
+
+int loadRootDirectory(uint64_t numberOfBlocks) {
+    //Allocate enough memory before proceeding
+    loadedRoot = malloc(VCB->root_dir_size * MINBLOCKSIZE);
+    if (!loadedRoot) {
+        return -1;
+    }
+	printf("loadROOT using %ld blocks from %ld\n",VCB->root_dir_size,VCB->root_dir_index);
+    LBAread(loadedRoot, VCB->root_dir_size,VCB->root_dir_index);
+    
+	//free space + root dir block for bitmap
+	int amount_bitmap=VCB->bit_map_size + VCB->root_dir_size;
+	for (int i = 0; i <= amount_bitmap; i++) {
+		set_bit(fsmap, i);
+	}
+
+    //Keep track of the root and current working directories
+    loadedCWD = loadedRoot;
+    return 0;
+}
+
 int initVolumeControlBlock(uint64_t numberOfBlocks){
-	VCB= malloc(MINBLOCKSIZE * sizeof(struct vcb));
-    // Check if the signature matches
-	if (LBAread(VCB, 1, 0) != 1) {
-		printf("Failed to read first block.\n");
-		free(VCB);
-    	VCB = NULL;
-		return -1;
-	}
-
-	if (VCB->signature == vcbSIG) {
-        printf("Volume already initialized.\n");
-		return 0; // Volume already initialized, return success
-	}
-
 	//initialize value in Volume control block 
 	VCB->signature = vcbSIG; 
 	VCB->block_index = 0; //location of the VCB
@@ -135,12 +176,6 @@ int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
 	    return -1;
 	}
 
-	// if location of start return negative or exceed limit
-    // if (location->start == -1 || location->count != dirEntryAmount) {
-    //     free(location);
-    //     return -1; // return error 
-    // }
-
 	// Create a pointer to an array of directory entries
 	struct dirEntry *dirEntries = malloc(dirEntry_bytes);
     if (!dirEntries) {
@@ -149,7 +184,7 @@ int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
     }
 
     // Initialize Root directory entries
-	for (int i = 0; i < dirEntryAmount; i++) {
+	for (int i = 2; i < dirEntryAmount; i++) {
 		dirEntries[i].fileName[0] = '\0';// Null terminated  
 		// dirEntries[i].isDirectory = 0;
 	}
@@ -193,17 +228,18 @@ int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
     // Write amount of block from index get by allocateSpace to directory  entries
     LBAwrite(dirEntries,location->count, location->start);
 
-	//free directory if not root, keep track of the root and current directories
+	// If parent provided it is directory 
     if (ppinfo && ppinfo->parent) {
         free(dirEntries);
     } else {
-       	loadedRoot = dirEntries;
+		// It is root, need keep track of the Current working directory 
+		loadedRoot = dirEntries;
     	loadedCWD = loadedRoot;   
+		
+		VCB->root_dir_index = location->start; //set root index only when inital 
+		VCB->root_dir_size = location->count; // amount of blocks of Root Dir 
     }
-	//Assign length to Volume Control Block
-	VCB->root_dir_index = location->start; //set root index only when inital 
-	VCB->root_dir_size = location->count; // amount of blocks of Root Dir 
-
+	
 	free(location);
 	// int bitmap_status ;
 	// for(int i=0;i<=64;i++){

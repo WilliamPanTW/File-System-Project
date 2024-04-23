@@ -68,8 +68,10 @@ struct vcb
 	);
 	
 	//**************************Helper function**************************//
+	int loadFreeSpace(uint64_t numberOfBlocks);
+	int loadRootDirectory(uint64_t numberOfBlocks);
+
 	int initVolumeControlBlock(uint64_t numberOfBlocks);
-	int initFreeSpace(uint64_t numberOfBlocks);
 	int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo);
 
 	void set_bit(char* bitmap, int position);
