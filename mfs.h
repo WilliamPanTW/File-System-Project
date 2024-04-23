@@ -98,5 +98,7 @@ struct fs_stat
 
 int fs_stat(const char *path, struct fs_stat *buf);
 
+int cmd_pwd (int argcnt, char *argvec[]);
+
 #endif
 

@@ -42,22 +42,19 @@ int fs_setcwd(char *pathname){
 
     //Step.2 call parsepath to check if it valid
     if (parsePath((char*)pathname, &ppinfo) != 0) {
-        printf("parse path detect invalid path\n");
         return -1; //Invalid path
     }
 
     //Step.3 Check last element does not exist
     if (ppinfo.lastElementIndex == -1) {
-        printf("setcwd: Last elements did not exist \n");
         freeppinfo();
-        return -1; //exit failed
+        return -1; //exit it does not exist
     } 
 
     //step.4 Look at parent[index], is it a directory
      if (!isDirectory(&ppinfo.parent[ppinfo.lastElementIndex])) {
-        printf("setcwd: path is not directory \n");
         freeppinfo();
-        return -1;
+        return -1; //exit it is not directory
     }
 
     //Step.5 Load Directory
@@ -69,11 +66,9 @@ int fs_setcwd(char *pathname){
 
     //If start with absolute path("/"), copy the path
     if (tempPathName[0] == '/') {
-        printf("it is absolute\n");
         strncpy(cwdPath, tempPathName, MAX_FILENAME_LENGTH);// just copy path
     } else { 
         // If the path is relative
-        printf("it is relative\n");
         strcat(cwdPath, tempPathName);//Concate with current working directory  
     }
     
@@ -128,6 +123,8 @@ int fs_setcwd(char *pathname){
     //step.7 loadedCWD = temp
     loadedCWD = temp;
 
+    char *dummy[] = {"d", NULL}; 
+    cmd_pwd (1, dummy);//dummy to Prints the working directory
     freeppinfo();
     return 0;
 }
