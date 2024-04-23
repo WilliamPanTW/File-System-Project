@@ -29,6 +29,145 @@ char cwdPath[MAX_FILENAME_LENGTH] = "/"; //inital root string current working di
 
 
 /****************************************************************************************
+*  displayFiles for use by ls command
+****************************************************************************************/
+
+
+struct fs_diriteminfo *fs_readdir(fdDir *dirp) {
+    struct dirEntry* entry = dirp->directory;
+    while (dirp->dirEntryPosition <= dirp->d_reclen) {
+        entry = &dirp->directory[dirp->dirEntryPosition];
+        dirp->dirEntryPosition++;
+        if (entry->fileName[0] == '\0') {
+            continue;
+        }
+        struct fs_diriteminfo* info = dirp->di;
+        strncpy(info->d_name, entry->fileName, 256);
+        if (isDirectory(entry)) {
+            info->fileType = 'D';
+        } else {
+            info->fileType = 'F';
+        }
+        return info;
+    }
+    return NULL;//End of file or error 
+}
+
+int fs_stat(const char *path, struct fs_stat *buf) {
+    if (buf == NULL) {
+        return -1;
+    }
+    if (parsePath((char*)path, &ppinfo) != 0) {
+        return -1;
+    }
+    if (ppinfo.lastElementIndex == -1) {
+        freeppinfo();
+        return -1;
+    }
+    struct dirEntry* entry = &ppinfo.parent[ppinfo.lastElementIndex];
+    
+    //Provide necessary information
+    if (isDirectory(entry)) {
+        buf->st_size = entry->entry_amount * sizeof(struct dirEntry*);
+    } else {
+        buf->st_size = entry->dir_size;
+    }
+    buf->st_blksize = MINBLOCKSIZE;
+    buf->st_blocks = entry->dir_size;
+    buf->st_accesstime = entry->modifyDate;
+    buf->st_modtime = entry->modifyDate;
+    buf->st_createtime = entry->createDate;
+    return 0;
+}
+
+int fs_closedir(fdDir *dirp) {
+    if (!dirp) {
+        return 0;
+    }
+    
+    free(dirp->directory);
+    free(dirp->di);
+    free(dirp);
+    return 0;
+}
+
+
+/****************************************************************************************
+*  Ls commmand
+****************************************************************************************/
+// Directory iteration functions
+
+fdDir * fs_opendir(const char *pathname) {
+    if (parsePath((char*)pathname, &ppinfo) != 0) {
+        return NULL;
+    }
+    
+    struct dirEntry* entry;
+    //If the directory doesn't exists
+    if (ppinfo.lastElementIndex == -1) {
+        if (ppinfo.lastElementName != NULL) {
+            freeLastElementName();
+            freeppinfo();
+            return NULL;
+        }
+        entry = loadDir(ppinfo.parent);
+    } else {
+        entry = loadDir(&ppinfo.parent[ppinfo.lastElementIndex]);
+    }
+
+    //This function doesn't need path info from this point forward
+    freeppinfo();
+
+    struct fs_diriteminfo* di = malloc(sizeof(struct fs_diriteminfo));
+    if (!di) {
+        return NULL;
+    }
+
+    fdDir* result = malloc(sizeof(fdDir));
+    if (!result) {
+        return NULL;
+    }
+
+    result->directory = entry;
+    result->di = di;
+    result->dirEntryPosition = 2; //dot and dot dot take up zero and one
+    result->d_reclen = entry->entry_amount - 1;
+    printf("result %d/n",entry->entry_amount - 1);
+    printf("Can you keep up? %d/n",result->d_reclen);
+
+    return result;
+}
+
+//return 1 if directory, 0 otherwise
+int fs_isDir(char * pathname) {
+    if (parsePath(pathname, &ppinfo) != 0) {
+        return -1;
+    }
+
+    struct dirEntry* entry = loadedCWD;
+
+    //If the directory doesn't exists
+    if (ppinfo.lastElementIndex == -1) {
+        if (ppinfo.lastElementName != NULL) {
+            freeppinfo();
+            return -1;
+        }
+        entry = ppinfo.parent;
+    } else {
+        entry = &ppinfo.parent[ppinfo.lastElementIndex];
+    }
+
+    if (isDirectory(entry)) {
+        printf("You are directory\n");
+        freeppinfo();
+        return 1;//It's directory
+    }
+    printf("why are you not directory?\n");
+    freeppinfo();
+    return 0;
+}
+
+/****************************************************************************************
 *  cd command 
 ****************************************************************************************/
 
@@ -116,10 +255,11 @@ int fs_setcwd(char *pathname){
     }
 
 
-    //step.6 if loadedCWD != loadedRootDiractory then free (loadedCWD)
-     if (loadedCWD != loadedRoot) {
+    //step.6 Check CWD is neither root directory nor parent directory
+    if (loadedCWD != loadedRoot&& loadedCWD != ppinfo.parent) {
         free(loadedCWD);
     }
+
     //step.7 loadedCWD = temp
     loadedCWD = temp;
 
@@ -166,147 +306,6 @@ int fs_isFile(char * filename) {
     return 0;
 }	
 
-
-
-/****************************************************************************************
-*  displayFiles for use by ls command
-****************************************************************************************/
-
-
-struct fs_diriteminfo *fs_readdir(fdDir *dirp) {
-    struct dirEntry* entry = dirp->directory;
-    while (dirp->dirEntryPosition <= dirp->d_reclen) {
-        entry = &dirp->directory[dirp->dirEntryPosition];
-        dirp->dirEntryPosition++;
-        if (entry->fileName[0] == '\0') {
-            continue;
-        }
-        struct fs_diriteminfo* info = dirp->di;
-        strncpy(info->d_name, entry->fileName, 256);
-        if (isDirectory(entry)) {
-            info->fileType = 'D';
-        } else {
-            info->fileType = 'F';
-        }
-        return info;
-    }
-    return NULL;//End of file or error 
-}
-
-int fs_stat(const char *path, struct fs_stat *buf) {
-    if (buf == NULL) {
-        return -1;
-    }
-    if (parsePath((char*)path, &ppinfo) != 0) {
-        return -1;
-    }
-    if (ppinfo.lastElementIndex == -1) {
-        freeppinfo();
-        return -1;
-    }
-    struct dirEntry* entry = &ppinfo.parent[ppinfo.lastElementIndex];
-    
-    //Provide necessary information
-    if (isDirectory(entry)) {
-        buf->st_size = entry->entry_amount * sizeof(struct dirEntry*);
-    } else {
-        buf->st_size = entry->dir_size;
-    }
-    buf->st_blksize = MINBLOCKSIZE;
-    buf->st_blocks = entry->dir_size;
-    buf->st_accesstime = entry->modifyDate;
-    buf->st_modtime = entry->modifyDate;
-    buf->st_createtime = entry->createDate;
-    return 0;
-}
-
-int fs_closedir(fdDir *dirp) {
-    if (!dirp) {
-        return 0;
-    }
-    
-    free(dirp->directory);
-    free(dirp->di);
-    free(dirp);
-    return 0;
-}
-
-
-
-/****************************************************************************************
-*  Ls commmand
-****************************************************************************************/
-// Directory iteration functions
-
-fdDir * fs_opendir(const char *pathname) {
-    if (parsePath((char*)pathname, &ppinfo) != 0) {
-        return NULL;
-    }
-    
-    struct dirEntry* entry;
-    //If the directory doesn't exists
-    if (ppinfo.lastElementIndex == -1) {
-        if (ppinfo.lastElementName != NULL) {
-            freeLastElementName();
-            freeppinfo();
-            return NULL;
-        }
-        entry = loadDir(ppinfo.parent);
-    } else {
-        entry = loadDir(&ppinfo.parent[ppinfo.lastElementIndex]);
-    }
-
-    //This function doesn't need path info from this point forward
-    freeppinfo();
-
-    struct fs_diriteminfo* di = malloc(sizeof(struct fs_diriteminfo));
-    if (!di) {
-        return NULL;
-    }
-
-    fdDir* result = malloc(sizeof(fdDir));
-    if (!result) {
-        return NULL;
-    }
-
-    result->directory = entry;
-    result->di = di;
-    result->dirEntryPosition = 2; //dot and dot dot take up zero and one
-    result->d_reclen = entry->entry_amount - 1;
-    printf("result %d/n",entry->entry_amount - 1);
-    printf("Can you keep up? %d/n",result->d_reclen);
-
-    return result;
-}
-
-//return 1 if directory, 0 otherwise
-int fs_isDir(char * pathname) {
-    if (parsePath(pathname, &ppinfo) != 0) {
-        return -1;
-    }
-
-    struct dirEntry* entry = loadedCWD;
-
-    //If the directory doesn't exists
-    if (ppinfo.lastElementIndex == -1) {
-        if (ppinfo.lastElementName != NULL) {
-            freeppinfo();
-            return -1;
-        }
-        entry = ppinfo.parent;
-    } else {
-        entry = &ppinfo.parent[ppinfo.lastElementIndex];
-    }
-
-    if (isDirectory(entry)) {
-        printf("You are directory\n");
-        freeppinfo();
-        return 1;//It's directory
-    }
-    printf("why are you not directory?\n");
-    freeppinfo();
-    return 0;
-}
 /****************************************************************************************
 *  Rm commmand
 ****************************************************************************************/

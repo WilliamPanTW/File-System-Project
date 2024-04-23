@@ -16,10 +16,10 @@
 #include "fsInit.h"
 #include "bitmap.h"
 
-struct pp_return_struct ppinfo; //global parse path info
-
 struct vcb *VCB; //Volume control block pointer
 char * fsmap; //pointer for free space(bitmap)
+
+struct pp_return_struct ppinfo; //global parse path info
 
 struct dirEntry* loadedRoot; // Root pointer for mfs.c
 struct dirEntry* loadedCWD; // current working directory for mfs
