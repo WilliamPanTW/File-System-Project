@@ -21,10 +21,10 @@
 #include <fcntl.h>
 
 #include "b_io.h"
+#include "b_io_helper.h"
 #include "fsInit.h"
 #include "mfs_helper.h"
 #include "mfs.h"
-
 #include "global.h"
 
 #define MAXFCBS 20
@@ -64,7 +64,7 @@ b_io_fd b_getFCB ()
 	{
 	for (int i = 0; i < MAXFCBS; i++)
 		{
-		if (fcbArray[i].buff == NULL)
+		if (fcbArray[i].buf == NULL)
 			{
 			return i;		//Not thread safe (But do not worry about it for this assignment)
 			}
@@ -95,27 +95,27 @@ b_io_fd b_open (char * filename, int flags)
 
 	//remove everything in contents
 	if (flags & O_TRUNC) {
-		if (ppinfo.index != -1) {
+		if (ppinfo.lastElementIndex != -1) {
 			entry = &parent[ppinfo.lastElementIndex];
 			freeExtents(entry);
-			entry->fileSize = 0;
+			entry->dir_size = 0;
 		}
 	}
 
 	//File must not exist, create new file
 	if (flags & O_CREAT) {
-		if (pathInfo.index == -1) {
-			int index = FindunusedDe(ppinfo.parent);
+		if (ppinfo.lastElementIndex == -2) {
+			int index = findUnusedDE(ppinfo.parent);
 			if (index == -1) {
 				printf("No space left!\n");
-				freePathInfo(NULL);
+				freeppinfo(NULL);
 				return -1;
 			}
 
 			ppinfo.lastElementIndex = index;
 				
-			if (initFile(&ppinfo) == -1) {
-				freePathInfo(NULL);
+			if (createFile(&ppinfo) == -1) {
+				freeppinfo(NULL);
 				return -1;
 			}
 				printf("Create file\n");
@@ -124,14 +124,14 @@ b_io_fd b_open (char * filename, int flags)
 
 	if (ppinfo.lastElementIndex == -1) {
 		printf("Doesn't exist\n");
-		freePathInfo(NULL);
+		freeppinfo(NULL);
 		return -1;
 	}
 	entry = &parent[ppinfo.lastElementIndex];
 
 	fcbArray[returnFd].buf = malloc(B_CHUNK_SIZE);
 	if (!fcbArray[returnFd].buf) {
-		freePathInfo(NULL);
+		freeppinfo(NULL);
 		return -1;
 	}
 
@@ -148,7 +148,7 @@ b_io_fd b_open (char * filename, int flags)
 
 	fcbArray[returnFd].file = entry;
 	fcbArray[returnFd].parent = parent; 
-	
+
 	fcbArray[returnFd].currentBlock = 0;
 	fcbArray[returnFd].currentPosition = 0;
 	fcbArray[returnFd].mode = flags;
@@ -156,11 +156,11 @@ b_io_fd b_open (char * filename, int flags)
 	//If file needs to append, start file at the end
 	if (flags & O_APPEND) {
 		for (int i = 0; i < MIN_DE; i++) {
-			if (entry->extents[i].count == 0) {
+			if (entry->dir_index == 0) {
 				fcbArray[returnFd].currentBlock = i;
 			}
 		}
-		fcbArray[returnFd].currentPosition = entry->fileSize;
+		fcbArray[returnFd].currentPosition = entry->dir_size;
 	}
 
 	return (returnFd);						// all set
@@ -237,5 +237,12 @@ int b_read (b_io_fd fd, char * buffer, int count)
 // Interface to Close the file	
 int b_close (b_io_fd fd)
 	{
+		freeppinfo();
+		if (fcbArray[fd].buf == NULL) {
+			return 0;
+		}
+		free(fcbArray[fd].buf);
+		fcbArray[fd].buf = NULL;
 
+		fcbArray[fd].mode = 0;
 	}

@@ -173,12 +173,6 @@ int findUnusedDE(struct dirEntry* entry) {
     return -1;//nothing found return error 
 }
 
-
-//check if it mark as directory 
-int isDirectory(struct dirEntry* entry) {
-    return entry->isDirectory & 1; //1 indicate it's directory zero as not
-}
-
 // find directory by it name 
 int findDirEntry(struct dirEntry* entry, char* name) {
     int numEntries = entry->entry_amount;
@@ -190,6 +184,11 @@ int findDirEntry(struct dirEntry* entry, char* name) {
         }
     }
     return -1;//no directory found 
+}
+
+//check if it mark as directory 
+int isDirectory(struct dirEntry* entry) {
+    return entry->isDirectory & 1; //1 indicate it's directory zero as not
 }
 
 //Loads a directory entry from disk into memory

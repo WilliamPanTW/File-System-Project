@@ -17,7 +17,8 @@
         "mfs_helper.h": "c",
         "global.h": "c",
         "limits": "c",
-        "readline.h": "c"
+        "readline.h": "c",
+        "b_io.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

@@ -295,7 +295,10 @@ int fs_rmdir(const char *pathname) {
     entry->fileName[0] = '\0'; //TO DO only array 0 will be null ternimate 
 
     // Write DIR changes back disk
-    LBAwrite(ppinfo.parent, entry->dir_size, entry->dir_index);
+    time_t current_time;
+	time(&current_time);
+    ppinfo.parent->modifyDate = current_time;
+    LBAwrite(ppinfo.parent, ppinfo.parent->dir_size, ppinfo.parent->dir_index);
 
     freePathParent();
 
@@ -337,7 +340,10 @@ int fs_delete(char* filename){
     entry->fileName[0] = '\0'; //TO DO only array 0 will be null ternimate 
 
     // Write DIR changes back disk
-    LBAwrite(ppinfo.parent, entry->dir_size, entry->dir_index);
+    time_t current_time;
+	time(&current_time);
+    ppinfo.parent->modifyDate = current_time;
+    LBAwrite(ppinfo.parent, ppinfo.parent->dir_size, ppinfo.parent->dir_index);
 
     
     freePathParent();
