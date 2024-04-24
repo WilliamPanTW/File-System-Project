@@ -133,17 +133,18 @@ fdDir * fs_opendir(const char *pathname) {
     }
     
     struct dirEntry* entry;
-    //Check if the parent directory doesn't exists
-    if (ppinfo.lastElementIndex == -1) {
+    //If the pare path index equal to specified root from parepath func
+    if (ppinfo.lastElementIndex == -2) {
+        // And does not have a name 
         if (ppinfo.lastElementName != NULL) {
             freeLastElementName();
             freeppinfo();
-            return NULL;
+            return NULL;//otherwise free and return null
         }
-        //Load directory entry for parent directory
+        //Then root Load directory entry itself 
         entry = loadDir(ppinfo.parent);
-    } else {
-        // Load directory entry for specified index (ex.root index:-2)
+    } else { //Else pare path return 0 mean it is directory 
+        // Load directory entry for specified parent index 
         entry = loadDir(&ppinfo.parent[ppinfo.lastElementIndex]);
     }
 

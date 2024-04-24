@@ -156,16 +156,15 @@ int parsePath(char* path, struct pp_return_struct* ppinfo) {
     char* tokenOne = strtok_r(copyPath, "/", &saveptr);
     // printf("--------------Path name token1: %s--------------\n",tokenOne); //pathname 
 
-    // cd "/" to root OR invalid path
+    // token null mean either specified just the slash or not specified anything
     if (tokenOne == NULL) {
         if (copyPath[0] !=  '/'){//Nothing specified invalid path
             return -1; //invalid path
-        }
-        else  {  // specified root 
+        }else  {  // specified root 
             ppinfo->parent = parent; // root is their own parent
             ppinfo->lastElementName = NULL; // no name 
-            ppinfo->lastElementIndex = -2; // NOT exist 
-            return 0;
+            ppinfo->lastElementIndex = -2; // NOT even exist 
+            return 0;//success return  
         }
     }
 
