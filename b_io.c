@@ -19,7 +19,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
 #include "b_io.h"
+#include "fsInit.h"
+#include "mfs_helper.h"
+#include "mfs.h"
+
+#include "global.h"
 
 #define MAXFCBS 20
 #define B_CHUNK_SIZE 512
@@ -30,6 +36,11 @@ typedef struct b_fcb
 	char * buf;		//holds the open file buffer
 	int index;		//holds the current position in the buffer
 	int buflen;		//holds how many valid bytes are in the buffer
+	int currentPosition;
+	int currentBlock;
+	int mode;
+	struct dirEntry * file;	     //hold the file directory 
+	struct dirEntry * parent;	 //hold the parent directory 
 	} b_fcb;
 	
 b_fcb fcbArray[MAXFCBS];
@@ -74,9 +85,84 @@ b_io_fd b_open (char * filename, int flags)
 		
 	if (startup == 0) b_init();  //Initialize our system
 	
+	
+	if (parsePath(filename, &ppinfo) != 0) {
+		return -1; // invalid path 
+	}
+
+	struct dirEntry* parent = ppinfo.parent;
+	struct dirEntry* entry;
+
+	//remove everything in contents
+	if (flags & O_TRUNC) {
+		if (ppinfo.index != -1) {
+			entry = &parent[ppinfo.lastElementIndex];
+			freeExtents(entry);
+			entry->fileSize = 0;
+		}
+	}
+
+	//File must not exist, create new file
+	if (flags & O_CREAT) {
+		if (pathInfo.index == -1) {
+			int index = FindunusedDe(ppinfo.parent);
+			if (index == -1) {
+				printf("No space left!\n");
+				freePathInfo(NULL);
+				return -1;
+			}
+
+			ppinfo.lastElementIndex = index;
+				
+			if (initFile(&ppinfo) == -1) {
+				freePathInfo(NULL);
+				return -1;
+			}
+				printf("Create file\n");
+		}
+	}
+
+	if (ppinfo.lastElementIndex == -1) {
+		printf("Doesn't exist\n");
+		freePathInfo(NULL);
+		return -1;
+	}
+	entry = &parent[ppinfo.lastElementIndex];
+
+	fcbArray[returnFd].buf = malloc(B_CHUNK_SIZE);
+	if (!fcbArray[returnFd].buf) {
+		freePathInfo(NULL);
+		return -1;
+	}
+
+	//In case get file info failed 
 	returnFd = b_getFCB();				// get our own file descriptor
 										// check for error - all used FCB's
 	
+	if (returnFd == -1){
+		return -1; // No free FCB available
+	} 
+
+	fcbArray[returnFd].index = 0;
+	fcbArray[returnFd].buflen = 0;
+
+	fcbArray[returnFd].file = entry;
+	fcbArray[returnFd].parent = parent; 
+	
+	fcbArray[returnFd].currentBlock = 0;
+	fcbArray[returnFd].currentPosition = 0;
+	fcbArray[returnFd].mode = flags;
+
+	//If file needs to append, start file at the end
+	if (flags & O_APPEND) {
+		for (int i = 0; i < MIN_DE; i++) {
+			if (entry->extents[i].count == 0) {
+				fcbArray[returnFd].currentBlock = i;
+			}
+		}
+		fcbArray[returnFd].currentPosition = entry->fileSize;
+	}
+
 	return (returnFd);						// all set
 	}
 

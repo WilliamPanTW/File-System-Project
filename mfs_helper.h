@@ -21,6 +21,15 @@
 #include "fsLow.h"
 #include "global.h"
 
+int cmd_pwd (int argcnt, char *argvec[]); //dummy check
+
+//****************************Display file for md ****************************
+struct fs_diriteminfo *fs_readdir(fdDir *dirp);
+
+int fs_stat(const char *path, struct fs_stat *buf);
+
+int fs_closedir(fdDir *dirp);
+
 //****************************Rm command ****************************
 
 // check if directory entry is empty 
