@@ -101,11 +101,12 @@ b_io_fd b_open (char * filename, int flags)
 			entry->dir_size = 0;
 		}
 	}
-
+	printf("-----------What your index open: %d -------------\n",ppinfo.lastElementIndex);
 	//File must not exist, create new file
 	if (flags & O_CREAT) {
-		if (ppinfo.lastElementIndex == -2) {
+		if (ppinfo.lastElementIndex == -1) {
 			int index = findUnusedDE(ppinfo.parent);
+			
 			if (index == -1) {
 				printf("No space left!\n");
 				freeppinfo(NULL);
@@ -113,7 +114,8 @@ b_io_fd b_open (char * filename, int flags)
 			}
 
 			ppinfo.lastElementIndex = index;
-				
+			printf("----------- new index: %d -------------\n",ppinfo.lastElementIndex);
+
 			if (createFile(&ppinfo) == -1) {
 				freeppinfo(NULL);
 				return -1;
