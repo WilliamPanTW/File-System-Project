@@ -34,47 +34,76 @@ char cwdPath[MAX_FILENAME_LENGTH] = "/"; //inital root string current working di
 
 
 struct fs_diriteminfo *fs_readdir(fdDir *dirp) {
-    struct dirEntry* entry = dirp->directory;
-    while (dirp->dirEntryPosition <= dirp->d_reclen) {
-        entry = &dirp->directory[dirp->dirEntryPosition];
+    // Check if directory stream handle is valid
+    if (!dirp) {
+        return NULL; //invalid stream
+    }
+ 
+    // Iterate until reaching the end or finding a valid entry  
+    while (dirp->dirEntryPosition <= dirp->dirEntriesCount) {
+        //Get the directory entry at the next position
+        struct dirEntry* nextEntry = &dirp->directory[dirp->dirEntryPosition];
+        
+        //Move to the next directory entry position
         dirp->dirEntryPosition++;
-        if (entry->fileName[0] == '\0') {
+
+        //Skip empty directory entries
+        if (nextEntry->fileName[0] == '\0') {
             continue;
         }
-        struct fs_diriteminfo* info = dirp->di;
-        strncpy(info->d_name, entry->fileName, 256);
-        if (isDirectory(entry)) {
-            info->fileType = 'D';
-        } else {
-            info->fileType = 'F';
+
+        // Copy directory entry information to fs_diriteminfo structure
+        struct fs_diriteminfo* dirItemInfo = dirp->di;
+        if (!dirItemInfo) {
+            return NULL; // allocation fails
         }
-        return info;
+        
+        strncpy(dirItemInfo->d_name, nextEntry->fileName, MAX_FILENAME_LENGTH);
+        
+        //set the file type
+        if (isDirectory(nextEntry)) {
+            dirItemInfo->fileType = 'd';
+        } else {
+            dirItemInfo->fileType = 'f';
+        }
+
+        return dirItemInfo;// Return next directory entry information
     }
     return NULL;//End of file or error 
 }
 
+//retrieve file status information
 int fs_stat(const char *path, struct fs_stat *buf) {
+  
     if (buf == NULL) {
         return -1;
     }
+    // check if directory is valid 
     if (parsePath((char*)path, &ppinfo) != 0) {
-        return -1;
+        return -1; //not valid
     }
+    //Check if the parent directory doesn't exists
     if (ppinfo.lastElementIndex == -1) {
         freeppinfo();
         return -1;
     }
+
+    // Get the directory entry corresponding to the last element in the path
     struct dirEntry* entry = &ppinfo.parent[ppinfo.lastElementIndex];
     
-    //Provide necessary information
+    // Set the size of the file or directory
     if (isDirectory(entry)) {
+        // For directories, set the size based on the number of entries
         buf->st_size = entry->entry_amount * sizeof(struct dirEntry*);
     } else {
+        // For files, set the size based on the directory size
         buf->st_size = entry->dir_size;
     }
+
+    // Initial the data 
+    buf->st_size = entry->dir_size*sizeof(struct dirEntry);
     buf->st_blksize = MINBLOCKSIZE;
     buf->st_blocks = entry->dir_size;
-    buf->st_accesstime = entry->modifyDate;
     buf->st_modtime = entry->modifyDate;
     buf->st_createtime = entry->createDate;
     return 0;
@@ -95,47 +124,50 @@ int fs_closedir(fdDir *dirp) {
 /****************************************************************************************
 *  Ls commmand
 ****************************************************************************************/
-// Directory iteration functions
 
+//opens a directory stream corresponding to the directory name
 fdDir * fs_opendir(const char *pathname) {
+    //check path name is valid or not  
     if (parsePath((char*)pathname, &ppinfo) != 0) {
-        return NULL;
+        return NULL; //invalid path 
     }
     
     struct dirEntry* entry;
-    //If the directory doesn't exists
+    //Check if the parent directory doesn't exists
     if (ppinfo.lastElementIndex == -1) {
         if (ppinfo.lastElementName != NULL) {
             freeLastElementName();
             freeppinfo();
             return NULL;
         }
+        //Load directory entry for parent directory
         entry = loadDir(ppinfo.parent);
     } else {
+        // Load directory entry for specified index (ex.root index:-2)
         entry = loadDir(&ppinfo.parent[ppinfo.lastElementIndex]);
     }
 
-    //This function doesn't need path info from this point forward
     freeppinfo();
-
-    struct fs_diriteminfo* di = malloc(sizeof(struct fs_diriteminfo));
-    if (!di) {
-        return NULL;
+    // Allocate memory for directory item info to provide caller with information
+    struct fs_diriteminfo* dirItemInfo = malloc(sizeof(struct fs_diriteminfo));
+    if (!dirItemInfo) {
+        return NULL;//fail to allocated
     }
 
-    fdDir* result = malloc(sizeof(fdDir));
-    if (!result) {
-        return NULL;
+    // Allocate memory for fdDir structure to keep track current process
+    fdDir* dirStream = malloc(sizeof(fdDir));
+    if (!dirStream) {
+        return NULL;//fail to allocated
     }
 
-    result->directory = entry;
-    result->di = di;
-    result->dirEntryPosition = 2; //dot and dot dot take up zero and one
-    result->d_reclen = entry->entry_amount - 1;
-    printf("result %d/n",entry->entry_amount - 1);
-    printf("Can you keep up? %d/n",result->d_reclen);
-
-    return result;
+    //initial struct fdDir 
+    dirStream->dirEntryPosition = 2; //dot and dot dot take up zero and one
+    dirStream->directory = entry;//point to the loaded directory 
+    dirStream->di = dirItemInfo; //pointer have return from read
+    dirStream->dirEntriesCount = entry->entry_amount - 1;
+    
+    //returns a pointer to the directory stream. 
+    return dirStream;
 }
 
 //return 1 if directory, 0 otherwise
@@ -146,7 +178,7 @@ int fs_isDir(char * pathname) {
 
     struct dirEntry* entry = loadedCWD;
 
-    //If the directory doesn't exists
+    //Check if the parent directory doesn't exists
     if (ppinfo.lastElementIndex == -1) {
         if (ppinfo.lastElementName != NULL) {
             freeppinfo();
@@ -158,11 +190,10 @@ int fs_isDir(char * pathname) {
     }
 
     if (isDirectory(entry)) {
-        printf("You are directory\n");
+        // printf("You are directory\n");
         freeppinfo();
         return 1;//It's directory
     }
-    printf("why are you not directory?\n");
     freeppinfo();
     return 0;
 }
@@ -184,7 +215,7 @@ int fs_setcwd(char *pathname){
         return -1; //Invalid path
     }
 
-    //Step.3 Check last element does not exist
+    //Step.3 Check if the parent directory doesn't exists
     if (ppinfo.lastElementIndex == -1) {
         freeppinfo();
         return -1; //exit it does not exist
@@ -290,7 +321,7 @@ int fs_isFile(char * filename) {
     //This function doesn't need last element
     freeLastElementName();
 
-    //If the file doesn't exists
+    //Check if the parent directory doesn't exists
     if (ppinfo.lastElementIndex == -1) {
         printf("File doesn't exist\n");
         freePathParent();
@@ -317,7 +348,7 @@ int fs_rmdir(const char *pathname) {
     }
 
     freeLastElementName();
-
+    //Check if the parent directory doesn't exists
     if (ppinfo.lastElementIndex == -1) {
         printf("failed to remove \'%s\': No such directory!\n", pathname);
         freePathParent();
@@ -373,7 +404,7 @@ int fs_delete(char* filename){
 
     //This function doesn't need last element
     freeLastElementName();
-
+    //Check if the parent directory doesn't exists
     if (ppinfo.lastElementIndex == -1) {
         printf("failed to remove \'%s\': No such directory!\n", filename);
         freePathParent();
