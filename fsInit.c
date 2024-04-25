@@ -46,8 +46,6 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	// if VCB is already inital
 	if (VCB->signature == vcbSIG) {
 		// printf("------------%11lx--------\n",vcbSIG);
-		printf("Volume already initialized.\n");
-
         if (loadFreeSpace(numberOfBlocks) != 0) {
             return -1;
         }
@@ -127,26 +125,29 @@ void exitFileSystem ()
 int loadFreeSpace(uint64_t numberOfBlocks) {
     fsmap = malloc(VCB->bit_map_size * MINBLOCKSIZE);
     if (!fsmap) {
-        return -1;
+        return -1; // fail to malloc fsmap(free space bitmap)
     }
+	// read the bitmap status from disk back to memory 
+	LBAread(fsmap, VCB->bit_map_size, VCB->bit_map_index);
+
+	// int bitmap_status;
+	// for(int i=0;i<=64;i++){
+	// 	bitmap_status = get_bit(fsmap, i);
+	// 	printf("bitmap index %d is %d\n",i,bitmap_status); //free as 0 and used as 1 
+	// } 
     return 0;
 }
 
 int loadRootDirectory(uint64_t numberOfBlocks) {
-    //Allocate enough memory before proceeding
     loadedRoot = malloc(VCB->root_dir_size * MINBLOCKSIZE);
     if (!loadedRoot) {
-        return -1;
+        return -1;// fail to malloc loadedRoot 
     }
-	printf("loadROOT using %ld blocks from %ld\n",VCB->root_dir_size,VCB->root_dir_index);
-    LBAread(loadedRoot, VCB->root_dir_size,VCB->root_dir_index);
-    
-	//free space + root dir block for bitmap
-	int amount_bitmap=VCB->bit_map_size + VCB->root_dir_size;
-	for (int i = 0; i <= amount_bitmap; i++) {
-		set_bit(fsmap, i);
-	}
-	VCB->free_block_index=amount_bitmap; //load free block tracking data
+
+    //read the root status from disk back to memory 
+	LBAread(loadedRoot, VCB->root_dir_size,VCB->root_dir_index);
+	// printf("loadROOT using %ld blocks from %ld\n",VCB->root_dir_size,VCB->root_dir_index);
+
     //Keep track of the root and current working directories
     loadedCWD = loadedRoot;
     return 0;
@@ -224,7 +225,7 @@ int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
     dirEntries[1].modifyDate = parent->modifyDate;
     dirEntries[1].isDirectory = parent->isDirectory;
 	
-	printf("Created directory using %d blocks starting at block %d\n", block_num, location->start);
+	printf("create directory using %d block from %d index \n",location->count,location->start);
     // Write amount of block from index get by allocateSpace to directory  entries
     LBAwrite(dirEntries,location->count, location->start);
 

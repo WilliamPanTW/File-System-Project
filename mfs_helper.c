@@ -140,14 +140,14 @@ void deallocateSpace(uint64_t startBlock, uint64_t numberOfBlocks) {
     for (int i = 0; i < numberOfBlocks; i++) {
         clear_bit(fsmap, startBlock + i);
     }
-    LBAwrite(fsmap, VCB->bit_map_size, VCB->bit_map_size);
+    LBAwrite(fsmap, VCB->bit_map_size, VCB->bit_map_index);
 }
 
 //Free extents associated with file
 int freeExtents(struct dirEntry* entry) {
     for (int i = 0; entry->dir_index != 0; i++) {
-        printf("Deallocate space start block : %d to num of block:%d \n",
-        entry->dir_index,entry->dir_size);
+        // printf("Deallocate space using %d block from %d index \n",
+        // entry->dir_size,entry->dir_index);
         deallocateSpace(entry->dir_index, entry->dir_size);
         entry->dir_index = 0;
         entry->dir_size = 0;
