@@ -50,7 +50,7 @@ fdDir * fs_opendir(const char *pathname) {
         }
         //Then root Load directory entry itself 
         entry = loadDir(ppinfo.parent);
-    } else { //Else pare path return 0 mean it is directory 
+    } else {
         // Load directory entry for specified parent index 
         entry = loadDir(&ppinfo.parent[ppinfo.lastElementIndex]);
     }
@@ -80,25 +80,28 @@ fdDir * fs_opendir(const char *pathname) {
 
 //return 1 if directory, 0 otherwise
 int fs_isDir(char * pathname) {
+    //check path is valid or not 
     if (parsePath(pathname, &ppinfo) != 0) {
-        return -1;
+        return -1; //invalid path 
     }
 
     struct dirEntry* entry = loadedCWD;
 
-    //Check if the parent directory doesn't exists
-    if (ppinfo.lastElementIndex == -1) {
+    //Check if it root or unspecifiy 
+    if (ppinfo.lastElementIndex == -2) {
+        // We have set root name as null 
         if (ppinfo.lastElementName != NULL) {
             freeppinfo();
-            return -1;
+            return -1; //ERROR 
         }
+        //Then root Load directory entry itself 
         entry = ppinfo.parent;
     } else {
+        // Load directory entry for specified parent index 
         entry = &ppinfo.parent[ppinfo.lastElementIndex];
     }
-
+    // check if it is a directory 
     if (isDirectory(entry)) {
-        // printf("You are directory\n");
         freeppinfo();
         return 1;//It's directory
     }
@@ -222,21 +225,19 @@ char *fs_getcwd(char *pathbuffer, size_t size) {
 
 //return 1 if file, 0 otherwise
 int fs_isFile(char * filename) {
+    //check if the path is valid 
     if (parsePath(filename, &ppinfo) != 0) {
-        return -1;
+        return -1;//invalid path
     }
-
-    //This function doesn't need last element
-    freeLastElementName();
 
     //Check if the parent directory doesn't exists
     if (ppinfo.lastElementIndex == -1) {
-        printf("File doesn't exist\n");
         freePathParent();
         return -1;
     }
 
     struct dirEntry* entry = &ppinfo.parent[ppinfo.lastElementIndex];
+    //check if it not a directory 
     if (!isDirectory(entry)) {
         freePathParent();
         return 1;//it's a file 
@@ -248,40 +249,40 @@ int fs_isFile(char * filename) {
 /****************************************************************************************
 *  Rm commmand
 ****************************************************************************************/
-
+// remove a direcotry
 int fs_rmdir(const char *pathname) {
+    //check if the path is valid 
     int result = parsePath((char*)pathname, &ppinfo);
-     if(result == -1){ 
+    if(result == -1){ 
         return -1; //invalid path
     }
 
-    freeLastElementName();
     //Check if the parent directory doesn't exists
     if (ppinfo.lastElementIndex == -1) {
-        printf("failed to remove \'%s\': No such directory!\n", pathname);
+        printf("md: failed to remove '%s' : No such directory\n",pathname);
         freePathParent();
         return -1;
-    } //Restrict the user from removing . and ..
+    } //prevent user to remove dot and dot dot 
     else if (ppinfo.lastElementIndex < 2) {
-        printf("failed to remove \'%s\': Not valid!\n", pathname);
+        printf("md: failed to remove '%s' : No such directory\n",pathname);
         freePathParent();
         return -1;
     }
 
-    //Check if directory before proceeding
+    //Check if it a directory 
     if (!isDirectory(&ppinfo.parent[ppinfo.lastElementIndex])) {
-        printf("failed to remove \'%s\': File is not directory.\n", pathname);
+        printf("md: failed to remove '%s' : it is not directory\n",pathname);
         freePathParent();
         return -1;
     }
 
-    //Load directory to check its entries if empty
+    //Load directory to check if directory empty
     struct dirEntry* entry = loadDir(&ppinfo.parent[ppinfo.lastElementIndex]);
     if(!isDirEntryEmpty(entry)) {
-        printf("failed to remove \'%s\': Directory not empty!\n", pathname);
+        printf("md: failed to remove '%s' : Directory not empty\n",pathname);
         free(entry);
         freePathParent();
-        return -1;
+        return -1; // It is not empty, fail to remove 
     }
     free(entry);
 
@@ -292,7 +293,7 @@ int fs_rmdir(const char *pathname) {
     deallocateSpace(entry->dir_index, entry->dir_size);
 
     //Set directory as unused in its parent
-    entry->fileName[0] = '\0'; //TO DO only array 0 will be null ternimate 
+    entry->fileName[0] = '\0'; 
 
     // Write DIR changes back disk
     time_t current_time;
@@ -301,43 +302,39 @@ int fs_rmdir(const char *pathname) {
     LBAwrite(ppinfo.parent, ppinfo.parent->dir_size, ppinfo.parent->dir_index);
 
     freePathParent();
-
-    printf("I don't think you free sucess\n");
     return 0;
 }
 
 //removes a file
 int fs_delete(char* filename){
+    // check if the paht is valid 
     if (parsePath((char*)filename, &ppinfo) != 0) {
-        printf("Invalid path!\n");
-        return -1;
+        return -1;//invalid path
     }
 
-    //This function doesn't need last element
-    freeLastElementName();
     //Check if the parent directory doesn't exists
     if (ppinfo.lastElementIndex == -1) {
-        printf("failed to remove \'%s\': No such directory!\n", filename);
+        printf("md: failed to remove '%s' : No such file\n",filename);
         freePathParent();
         return -1;
-    } //Restrict the user from removing . and ..
+    } //prevent user to remove dot and dot dot 
     else if (ppinfo.lastElementIndex < 2) {
-        printf("failed to remove \'%s\': Not valid!\n", filename);
+        printf("md: failed to remove '%s' : Invalid argument\n",filename);
         freePathParent();
         return -1;
     }
     struct dirEntry* entry = &ppinfo.parent[ppinfo.lastElementIndex];
+    //check if it is direcotry 
     if (isDirectory(entry)) {
-        printf("Not a file.\n");
         freePathParent();
-        return -1;
+        return -1; // it is directory return error 
     }
 
     //Free extents associated with file
     freeExtents(entry);  
 
-    //Set directory as unused in its parent
-    entry->fileName[0] = '\0'; //TO DO only array 0 will be null ternimate 
+    //Set directory as unused (NULL ternimated)
+    entry->fileName[0] = '\0';
 
     // Write DIR changes back disk
     time_t current_time;
@@ -347,7 +344,6 @@ int fs_delete(char* filename){
 
     
     freePathParent();
-    printf("I don't think it was remove\n");
     return 0;
 }	
 
@@ -356,16 +352,15 @@ int fs_delete(char* filename){
 ****************************************************************************************/
 
 int fs_mkdir(const char *pathname, mode_t mode){
-    int result;
-    
-    result = parsePath((char*)pathname, &ppinfo);
+    //check if the path is valid 
+    int result = parsePath((char*)pathname, &ppinfo);
     if(result == -1){ 
         return -1; //invalid path
     }
 
     //compare the new directory is exist or not
     if(ppinfo.lastElementIndex!=-1){
-        printf("mkdir: cannot create directory '%s' : File exists\n",pathname);
+        printf("md: cannot create directory '%s' : File exists\n",pathname);
         freeppinfo();
         return -1; //already exist 
     }

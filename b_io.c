@@ -137,10 +137,11 @@ b_io_fd b_open (char * filename, int flags)
 		return -1;
 	}
 
+
 	//In case get file info failed 
 	returnFd = b_getFCB();				// get our own file descriptor
-										// check for error - all used FCB's
-	
+										
+	// check for error - all used FCB's
 	if (returnFd == -1){
 		return -1; // No free FCB available
 	} 
