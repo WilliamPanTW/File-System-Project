@@ -85,15 +85,15 @@ b_io_fd b_open (char * filename, int flags)
 		
 	if (startup == 0) b_init();  //Initialize our system
 	
-	
+	//check if the filename is valid 
 	if (parsePath(filename, &ppinfo) != 0) {
-		return -1; // invalid path 
+		return -1; // invalid  
 	}
-
+	//retrieve parent directroy information 
 	struct dirEntry* parent = ppinfo.parent;
 	struct dirEntry* entry;
 
-	//remove everything in contents
+	//remove everything in contents if TRUNC flag is set
 	if (flags & O_TRUNC) {
 		if (ppinfo.lastElementIndex != -1) {
 			entry = &parent[ppinfo.lastElementIndex];
@@ -101,36 +101,34 @@ b_io_fd b_open (char * filename, int flags)
 			entry->dir_size = 0;
 		}
 	}
-	printf("-----------What your index open: %d -------------\n",ppinfo.lastElementIndex);
-	//File must not exist, create new file
+
+	//Create a new file 
 	if (flags & O_CREAT) {
+		//check if file does exist
 		if (ppinfo.lastElementIndex == -1) {
 			int index = findUnusedDE(ppinfo.parent);
-			
+			// check what index by find unuesd directory  
 			if (index == -1) {
-				printf("No space left!\n");
 				freeppinfo(NULL);
-				return -1;
+				return -1; //no Space left 
 			}
-
+			//assign new index 
 			ppinfo.lastElementIndex = index;
-			printf("----------- new index: %d -------------\n",ppinfo.lastElementIndex);
-
+			//check if create file fail 
 			if (createFile(&ppinfo) == -1) {
 				freeppinfo(NULL);
 				return -1;
 			}
-				printf("Create file\n");
 		}
 	}
-
+	// if the newly assign index is still zero 
 	if (ppinfo.lastElementIndex == -1) {
-		printf("Doesn't exist\n");
 		freeppinfo(NULL);
-		return -1;
+		return -1; // ERROR
 	}
+	// Retrieve file parent information
 	entry = &parent[ppinfo.lastElementIndex];
-
+	// Allocate memory for the file buffer
 	fcbArray[returnFd].buf = malloc(B_CHUNK_SIZE);
 	if (!fcbArray[returnFd].buf) {
 		freeppinfo(NULL);
@@ -138,14 +136,14 @@ b_io_fd b_open (char * filename, int flags)
 	}
 
 
-	//In case get file info failed 
+	// Get a free File Control Block (FCB), in case get file info failed 
 	returnFd = b_getFCB();				// get our own file descriptor
 										
 	// check for error - all used FCB's
 	if (returnFd == -1){
 		return -1; // No free FCB available
 	} 
-
+	//Initialize FCB with file information
 	fcbArray[returnFd].index = 0;
 	fcbArray[returnFd].buflen = 0;
 
@@ -154,20 +152,24 @@ b_io_fd b_open (char * filename, int flags)
 
 	fcbArray[returnFd].currentBlock = 0;
 	fcbArray[returnFd].currentPosition = 0;
-	fcbArray[returnFd].mode = flags;
-
-	//If file needs to append, start file at the end
+	fcbArray[returnFd].mode = flags%16; //the reminder of flag is mod
+	
+	// Set file position to end if O_APPEND flag is set
 	if (flags & O_APPEND) {
+		//iterate to find an available block
 		for (int i = 0; i < MIN_DE; i++) {
+			// Check if the current block is empty
 			if (entry->dir_index == 0) {
+				//// Set the current block to the empty block index
 				fcbArray[returnFd].currentBlock = i;
 			}
 		}
+		//// Set the current position of the FCB to the end of the file
 		fcbArray[returnFd].currentPosition = entry->dir_size;
 	}
 
 	return (returnFd);						// all set
-	}
+}
 
 
 // Interface to seek function	
