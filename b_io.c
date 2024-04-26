@@ -128,13 +128,6 @@ b_io_fd b_open (char * filename, int flags)
 	}
 	// Retrieve file parent information
 	entry = &parent[ppinfo.lastElementIndex];
-	// Allocate memory for the file buffer
-	fcbArray[returnFd].buf = malloc(B_CHUNK_SIZE);
-	if (!fcbArray[returnFd].buf) {
-		freeppinfo(NULL);
-		return -1;
-	}
-
 
 	// Get a free File Control Block (FCB), in case get file info failed 
 	returnFd = b_getFCB();				// get our own file descriptor
@@ -143,6 +136,14 @@ b_io_fd b_open (char * filename, int flags)
 	if (returnFd == -1){
 		return -1; // No free FCB available
 	} 
+	
+	// Allocate memory for the file buffer
+	fcbArray[returnFd].buf = malloc(B_CHUNK_SIZE);
+	if (!fcbArray[returnFd].buf) {
+		freeppinfo(NULL);
+		return -1;
+	}
+
 	//Initialize FCB with file information
 	fcbArray[returnFd].index = 0;
 	fcbArray[returnFd].buflen = 0;

@@ -33,11 +33,9 @@ int createFile(struct pp_return_struct* info) {
 	time(&current_time);
     entry->createDate = current_time;
     entry->modifyDate = current_time;
-    
+    ppinfo.parent->modifyDate = current_time;
 
     // Write changes back disk
-    time_t t = time(NULL);
-    ppinfo.parent->modifyDate = t;
     LBAwrite(ppinfo.parent, ppinfo.parent->dir_size, ppinfo.parent->dir_index);
 
     return 0;
