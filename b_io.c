@@ -36,8 +36,8 @@ typedef struct b_fcb
 	char * buf;				 //holds the open file buffer
 	int index;				 //holds the current position in the buffer
 	int buflen;				 //holds how many valid bytes are in the buffer
-	int currentPosition;	 //hold how many block file occupies (numBlocks)
-	int currentBlock;		 //hold the current block number (currentBLK)
+	int numBlocks;			 //hold how many block file occupies 
+	int currentBlock;		 //hold the current block number 
 	int mode;				 //hold the mode from flag
 	struct dirEntry * file;	 //hold the file directory 
 	struct dirEntry * parent;//hold the parent directory 
@@ -152,7 +152,7 @@ b_io_fd b_open (char * filename, int flags)
 	fcbArray[returnFd].parent = parent; 
 
 	fcbArray[returnFd].currentBlock = 0;
-	fcbArray[returnFd].currentPosition = 0;
+	fcbArray[returnFd].numBlocks = 0;
 	fcbArray[returnFd].mode = flags%16; //the reminder of flag is mod
 	
 	// Set file position to end if O_APPEND flag is set
@@ -165,8 +165,8 @@ b_io_fd b_open (char * filename, int flags)
 				fcbArray[returnFd].currentBlock = i;
 			}
 		}
-		//// Set the current position of the FCB to the end of the file
-		fcbArray[returnFd].currentPosition = entry->dir_size;
+		// Set the num of blocks of the FCB to the end of the file
+		fcbArray[returnFd].numBlocks = entry->dir_size;
 	}
 
 	return (returnFd);						// all set
@@ -193,6 +193,18 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 // Interface to write function	
 int b_write (b_io_fd fd, char * buffer, int count)
 	{
+	int part1 = 0;
+	int part2 = 0;
+	int part3 = 0;
+
+	struct dirEntry* parent = fcbArray[fd].parent;
+	struct dirEntry* entry = fcbArray[fd].file;
+
+	// Update file's modification date
+	time_t current_time;
+	time(&current_time);
+    fcbArray[fd].file->modifyDate = current_time;
+
 	if (startup == 0) b_init();  //Initialize our system
 
 	// check that fd is between 0 and (MAXFCBS-1)
@@ -201,9 +213,83 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		return (-1); 					//invalid file descriptor
 		}
 		
+	// Check file mode
+    if (fcbArray[fd].mode & O_RDONLY) {
+		printf("cp: %s: Permission denied\n",fcbArray[fd].file->fileName);
+        return (-1); // File open for read
+    } 
+
+	//Loop until all data is writte
+	while (count > 0) {
+	// Calculate parts of the buffer to handle
+		if(count < B_CHUNK_SIZE){
+			part1 = count;
+		}else{
+			part1 = B_CHUNK_SIZE;
+		}
+
+        // If at start of buffer, create a new extent
+		if (fcbArray[fd].index == 0) {
+			part2 = part1;
+			part1 = 0;
+			part3 = (count - part2);
+		}
+
+        // Adjust parts if necessary
+		if ((part1 + fcbArray[fd].index) >= B_CHUNK_SIZE) {
+			part1 = B_CHUNK_SIZE - fcbArray[fd].index;
+			part2 = count - part1;
+			if (part2 > 0) {
+				fcbArray[fd].currentBlock += 1;
+			}
+		}
+
 		
-	return (0); //Change this
-	}
+        // Write remaining bytes from buffer
+        if (part1 > 0) {
+			memcpy(fcbArray[fd].buf + fcbArray[fd].index, buffer, part1);
+			fcbArray[fd].index += part1;
+			LBAwrite(fcbArray[fd].buf, 1, entry->dir_index);
+			entry->dir_size += part1;
+		}
+
+        // Refill buffer if necessary
+		if (part2 > 0) {
+			struct extent* newExtents = allocateSpace(1, 1);
+			if (!newExtents) {
+                // If unable to allocate space, return error
+				parent->modifyDate = current_time;
+    			LBAwrite(parent,parent->dir_size,parent->dir_index);
+				return -1;
+			}
+			// Update file properties for new extent
+			entry->dir_index = newExtents->start;
+			entry->dir_size = newExtents->count;
+			free(newExtents);
+
+            // Copy remaining data to buffer
+			memcpy(fcbArray[fd].buf, buffer + part3, part2);
+            // Update buffer index and write to disk
+			fcbArray[fd].index = part2;
+			LBAwrite(fcbArray[fd].buf, 1, entry->dir_index);
+			entry->dir_size += part2;
+		}
+        // Update count for remaining bytes
+		count -= part1 + part2;
+    }
+    // Calculate total bytes written
+	int totalBytesWritten = part1 + part2;
+	
+    // Update and write back parent directory 
+    parent->modifyDate = current_time;
+    LBAwrite(parent,parent->dir_size,parent->dir_index);
+
+	printf("We have read %d characters from file \n",totalBytesWritten);
+
+	// Return the total number of bytes actually written
+    return totalBytesWritten; 
+}
+
 
 
 
@@ -248,12 +334,16 @@ int b_read (b_io_fd fd, char * buffer, int count)
 		printf("cat: %s: Permission denied\n",fcbArray[fd].file->fileName);
         return (-1); // File open for write
     } 
-
+	//check if it is directory 
 	if (isDirectory(&ppinfo.parent[ppinfo.lastElementIndex])) {
         freePathParent();
 		printf("cat: %s: Is a directory\n",fcbArray[fd].file->fileName);
         return (-1); // it is directory return error 
     }
+	//check if it exceeds the file size
+	if (fcbArray[fd].numBlocks >= fcbArray[fd].file->dir_size) {
+		return 0;
+	}
 
 	// number of bytes available to copy from buffer 
 	remainingBytesInMyBuffer = fcbArray[fd].buflen - fcbArray[fd].index;
@@ -341,9 +431,12 @@ int b_read (b_io_fd fd, char * buffer, int count)
 		}
 
 	bytesReturned = part1 + part2 + part3;
-	printf("Hell yeah %d \n",bytesReturned);
+
+	printf("We have read %d characters from file %s \n",
+			bytesReturned,fcbArray[fd].file->fileName);
+
 	return (bytesReturned);
-}
+	}
 	
 // Interface to Close the file	
 int b_close (b_io_fd fd)
