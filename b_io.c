@@ -136,7 +136,7 @@ b_io_fd b_open (char * filename, int flags)
 	if (returnFd == -1){
 		return -1; // No free FCB available
 	} 
-	
+
 	// Allocate memory for the file buffer
 	fcbArray[returnFd].buf = malloc(B_CHUNK_SIZE);
 	if (!fcbArray[returnFd].buf) {
@@ -243,6 +243,18 @@ int b_read (b_io_fd fd, char * buffer, int count)
 		return (-1); 					// invalid file descriptor
 		}
 
+	// Check file mode
+    if (fcbArray[fd].mode & O_WRONLY) {
+		printf("cat: %s: Permission denied\n",fcbArray[fd].file->fileName);
+        return (-1); // File open for write
+    } 
+
+	if (isDirectory(&ppinfo.parent[ppinfo.lastElementIndex])) {
+        freePathParent();
+		printf("cat: %s: Is a directory\n",fcbArray[fd].file->fileName);
+        return (-1); // it is directory return error 
+    }
+
 	// number of bytes available to copy from buffer 
 	remainingBytesInMyBuffer = fcbArray[fd].buflen - fcbArray[fd].index;
 
@@ -329,6 +341,7 @@ int b_read (b_io_fd fd, char * buffer, int count)
 		}
 
 	bytesReturned = part1 + part2 + part3;
+	printf("Hell yeah %d \n",bytesReturned);
 	return (bytesReturned);
 }
 	

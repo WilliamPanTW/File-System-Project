@@ -133,7 +133,7 @@ int fs_setcwd(char *pathname){
     } 
 
     //step.4 Look at parent[index], is it a directory
-     if (!isDirectory(&ppinfo.parent[ppinfo.lastElementIndex])) {
+    if (!isDirectory(&ppinfo.parent[ppinfo.lastElementIndex])) {
         freeppinfo();
         return -1; //exit it is not directory
     }
