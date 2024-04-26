@@ -207,7 +207,7 @@ int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
 		parent[index].isDirectory = dirEntries[0].isDirectory;//set as direcotry
 
 		parent[index].dir_index = location->start;//get the new free spce allocate   
-		parent[index].dir_size = location->count; //amount of free space allocate
+		parent[index].dir_size = dirEntryAmount; //amount of free space allocate
 		
 		parent[index].entry_amount = dirEntries[0].entry_amount;//set amount of entries
 

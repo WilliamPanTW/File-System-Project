@@ -33,14 +33,14 @@
 typedef struct b_fcb
 	{
 	/** TODO add al the information you need in the file control block **/
-	char * buf;		//holds the open file buffer
-	int index;		//holds the current position in the buffer
-	int buflen;		//holds how many valid bytes are in the buffer
-	int currentPosition;
-	int currentBlock;
-	int mode;
-	struct dirEntry * file;	     //hold the file directory 
-	struct dirEntry * parent;	 //hold the parent directory 
+	char * buf;				 //holds the open file buffer
+	int index;				 //holds the current position in the buffer
+	int buflen;				 //holds how many valid bytes are in the buffer
+	int currentPosition;	 //hold how many block file occupies (numBlocks)
+	int currentBlock;		 //hold the current block number (currentBLK)
+	int mode;				 //hold the mode from flag
+	struct dirEntry * file;	 //hold the file directory 
+	struct dirEntry * parent;//hold the parent directory 
 	} b_fcb;
 	
 b_fcb fcbArray[MAXFCBS];
@@ -227,17 +227,109 @@ int b_write (b_io_fd fd, char * buffer, int count)
 //  +-------------+------------------------------------------------+--------+
 int b_read (b_io_fd fd, char * buffer, int count)
 	{
+	
+	int bytesRead; 				 // for our read
+	int bytesReturned; 			 // what we will return
+	int part1, part2, part3; 	 // hold the three potential copy length 
+	int numberOfBlocksTocopy;	 // hold the number of while blocks that need copy 
+	int remainingBytesInMyBuffer;// hold how many bytes are left in my buffer
 
-	if (startup == 0) b_init();  //Initialize our system
+	if (startup == 0) b_init();  // Initialize our system
 
 	// check that fd is between 0 and (MAXFCBS-1)
 	if ((fd < 0) || (fd >= MAXFCBS))
 		{
-		return (-1); 					//invalid file descriptor
+		return (-1); 					// invalid file descriptor
 		}
-		
-	return (0);	//Change this
+
+	// number of bytes available to copy from buffer 
+	remainingBytesInMyBuffer = fcbArray[fd].buflen - fcbArray[fd].index;
+
+	// amount have given to user
+	int amountAlreadyDelivered = (fcbArray[fd].currentBlock * B_CHUNK_SIZE) - remainingBytesInMyBuffer;
+
+	// Limit count to file length to handle End of file
+	// by checking if amount they ask(count) plus already given exceed the file size 
+    if ((count + amountAlreadyDelivered) > fcbArray[fd].file->dir_size) {
+		// reduce count size and we could not go beyond file size
+        count = fcbArray[fd].file->dir_size - amountAlreadyDelivered;
+        if (count < 0) {
+            return -1; 
+        }
 	}
+
+	// Part 1: is the first copy of data which will be from the current buffer 
+	// It will be the lesser of the requested amount or the number of byte
+	if (remainingBytesInMyBuffer >= count) { // we have enought in buffer 
+		part1 = count;	// Completetely buffer (the requested amount)
+		part2 = 0;		
+		part3 = 0;		// Do not need anything from the "next" buffer
+	} else {
+		part1 = remainingBytesInMyBuffer;  // spanning buffer 
+
+		// Part 1 is not enought - set part 3 to how much more is needed 
+		part3 = count - remainingBytesInMyBuffer;
+
+		// The following calutation how many 512 bytes chuncks need to be 
+		// the caller buffer from the count of what is left to copy
+		numberOfBlocksTocopy=part3/ B_CHUNK_SIZE; 
+		part2=numberOfBlocksTocopy *B_CHUNK_SIZE;
+
+		// Reduce part 3 by the number of bytes that can be copied in chunk
+		// Part 3 at this point it must be less than block size
+		part3 = part3-part2; // equal to part3 % B_CHUNK_SIZE
+	}
+
+	if(part1 > 0) // memcpy part1
+		{
+		// that move my buffer plus my index to there buffer 
+		memcpy(buffer, fcbArray[fd].buf + fcbArray[fd].index, part1);
+		fcbArray[fd].index = fcbArray[fd].index + part1;//adjust where is starting
+		}
+
+	if (part2 > 0) // block to copy direct to callers buffer
+		{
+		// limit block to blocks left
+
+		//LBAread to their buffer
+		bytesRead = LBAread(buffer + part1, numberOfBlocksTocopy, 
+								fcbArray[fd].file->dir_index);
+
+		fcbArray[fd].currentBlock += numberOfBlocksTocopy;
+
+		part2 = bytesRead * B_CHUNK_SIZE; 
+		}
+
+	if (part3 > 0) // we need to refill out buffer to copy more bytes
+		{
+
+		//try to read B_CHUNK_SIZE bytes into our buffer
+		bytesRead = LBAread(fcbArray[fd].buf, 1, 
+								fcbArray[fd].file->dir_index);
+		
+		bytesRead = bytesRead * B_CHUNK_SIZE;
+		
+		fcbArray[fd].currentBlock += 1; // aleardy readed next block
+
+		//reset the offset and buffer length
+		fcbArray[fd].index = 0;
+		fcbArray[fd].buflen = bytesRead; //how many bytes are actually read
+		
+		if (bytesRead < part3)// Not even enough left to statisfy read requested from caller
+			{
+			part3 = bytesRead;
+			}
+
+		if (part3 > 0) //memcpy bytesRead
+			{
+			memcpy(buffer + part1 + part2, fcbArray[fd].buf + fcbArray[fd].index, part3);
+			fcbArray[fd].index = fcbArray[fd].index + part3; // adjust index
+			}
+		}
+
+	bytesReturned = part1 + part2 + part3;
+	return (bytesReturned);
+}
 	
 // Interface to Close the file	
 int b_close (b_io_fd fd)
