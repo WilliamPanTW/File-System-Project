@@ -21,7 +21,7 @@
 #include "fsLow.h"
 #include "global.h"
 
-int cmd_pwd (int argcnt, char *argvec[]); //dummy check
+// int cmd_pwd (int argcnt, char *argvec[]); //dummy check
 
 //****************************Display file for md ****************************
 struct fs_diriteminfo *fs_readdir(fdDir *dirp);

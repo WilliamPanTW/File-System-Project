@@ -24,6 +24,10 @@
 #include "fsInit.h"  // for directory strucuture s
 #include "b_io_helper.h"  // access function 
 
+/****************************************************
+*  b_open
+****************************************************/
+
 int createFile(struct pp_return_struct* info) {
     struct dirEntry* entry = &ppinfo.parent[ppinfo.lastElementIndex];
     strncpy(entry->fileName, ppinfo.lastElementName, 256);
@@ -43,6 +47,10 @@ int createFile(struct pp_return_struct* info) {
 
     return 0;
 }
+
+/****************************************************
+*  Move file commmand
+****************************************************/
 
 int moveFile(const char *src, const char *dest) {
     // Check if the destination path is valid

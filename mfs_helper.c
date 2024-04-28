@@ -207,7 +207,7 @@ struct dirEntry* loadDir(struct dirEntry* entry) {
         return NULL;
     }
 
-    printf("loaded directory using %d blocks starting at block %d\n", blocksNeeded, startBlock);
+    // printf("loaded directory using %d blocks starting at block %d\n", blocksNeeded, startBlock);
     int result = LBAread(loadDir, blocksNeeded, startBlock);
     if (result != blocksNeeded) {
         return NULL;

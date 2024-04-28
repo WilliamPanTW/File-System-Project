@@ -205,8 +205,8 @@ int fs_setcwd(char *pathname){
     //step.7 loadedCWD = temp
     loadedCWD = temp;
 
-    char *dummy[] = {"d", NULL}; 
-    cmd_pwd (1, dummy);//dummy to Prints the working directory
+    // char *dummy[] = {"d", NULL}; 
+    // cmd_pwd (1, dummy);//dummy to Prints the working directory
     freeppinfo();
     return 0;
 }
