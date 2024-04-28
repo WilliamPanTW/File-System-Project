@@ -184,8 +184,46 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 		return (-1); 					//invalid file descriptor
 		}
 		
-		
-	return (0); //Change this
+ 	// Get file entry from file control block array
+    struct dirEntry *entry = fcbArray[fd].file;
+
+	off_t new_position;
+
+    // Determine new position based on 'whence'
+    switch (whence) {
+        case SEEK_SET:
+            // Set new position to given offset from start of file
+            new_position = offset;
+            break;
+        case SEEK_CUR:
+            // Set new position to current position plus given offset
+            new_position = fcbArray[fd].currentBlock + offset;
+            break;
+        case SEEK_END:
+            // Set new position to given offset from end of file
+            new_position = entry->dir_size + offset;
+            break;
+        default:
+            return -1; // Invalid whence
+    }
+
+    // Check if new position is valid
+    if (new_position < 0) {
+        return -1; // Invalid position
+    }
+
+    // Update current file position
+    fcbArray[fd].currentBlock = new_position;
+
+    // Update file size if necessary
+    if (new_position > entry->dir_size) {
+        entry->dir_size = new_position;
+    }
+
+    // Calculate current block location
+    fcbArray[fd].currentBlock = (fcbArray[fd].currentBlock / B_CHUNK_SIZE);
+ 
+	return fcbArray[fd].currentBlock;; // Return the new current position
 	}
 
 
@@ -193,6 +231,14 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 // Interface to write function	
 int b_write (b_io_fd fd, char * buffer, int count)
 	{
+	if (startup == 0) b_init();  //Initialize our system
+
+	// check that fd is between 0 and (MAXFCBS-1)
+	if ((fd < 0) || (fd >= MAXFCBS))
+		{
+		return (-1); 					//invalid file descriptor
+		}
+
 	int part1 = 0;
 	int part2 = 0;
 	int part3 = 0;
@@ -204,14 +250,6 @@ int b_write (b_io_fd fd, char * buffer, int count)
 	time_t current_time;
 	time(&current_time);
     fcbArray[fd].file->modifyDate = current_time;
-
-	if (startup == 0) b_init();  //Initialize our system
-
-	// check that fd is between 0 and (MAXFCBS-1)
-	if ((fd < 0) || (fd >= MAXFCBS))
-		{
-		return (-1); 					//invalid file descriptor
-		}
 		
 	// Check file mode
     if (fcbArray[fd].mode & O_RDONLY) {
