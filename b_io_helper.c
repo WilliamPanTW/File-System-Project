@@ -36,20 +36,22 @@ int createFile(struct pp_return_struct* info) {
     entry->createDate = current_time;
     entry->modifyDate = current_time;
     ppinfo.parent->modifyDate = current_time;
-
+    printf("Create file using %d blocks from index %d \n"
+            ,ppinfo.parent->dir_size, ppinfo.parent->dir_index);
     // Write changes back disk
     LBAwrite(ppinfo.parent, ppinfo.parent->dir_size, ppinfo.parent->dir_index);
 
     return 0;
 }
 
-int moveFile(const char *srcPath, const char *destPath) {
-    if (parsePath((char*)destPath, &ppinfo) != 0) {
+int moveFile(const char *src, const char *dest) {
+    // Check if the destination path is valid
+    if (parsePath((char*)dest, &ppinfo) != 0) {
         return -1;
     }
 
-    //Load directory if exists
     struct dirEntry* newDir;
+    // Check if the destination directory exists
     if (ppinfo.lastElementIndex == -1) {
         if (ppinfo.lastElementName != NULL) {
             freeLastElementName();
@@ -61,25 +63,19 @@ int moveFile(const char *srcPath, const char *destPath) {
         newDir = loadDir(&ppinfo.parent[ppinfo.lastElementIndex]);
     }
 
-    //Don't continue if destination isn't a directory
+    //check if destination is directory 
     if (!isDirectory(newDir)) {
         free(newDir);
-        return -1;
+        return -1; // Error destination is not directory 
     }
 
-    //Now check if file exists
-    if (parsePath((char*)srcPath, &ppinfo) != 0) {
+    //check if source path is valid path 
+    if (parsePath((char*)src, &ppinfo) != 0) {
         free(newDir);
         return -1;
     }
 
-    if (ppinfo.lastElementIndex == -1) {
-        free(newDir);
-        freeppinfo();
-        return -1;
-    }
-
-    //If file is a directory, exit
+    //check If file is a directory
     struct dirEntry* file = &ppinfo.parent[ppinfo.lastElementIndex];
     if (isDirectory(file)) {
         free(newDir);
@@ -87,14 +83,14 @@ int moveFile(const char *srcPath, const char *destPath) {
         return -1;
     }
 
-    //Make sure the file isn't already in destination
+    //check if file exist in new directory 
     if (findDirEntry(newDir, ppinfo.lastElementName) != -1) {
         free(newDir);
         freeppinfo();
         return -1;
     }
 
-    //Check if there's space to move file
+    //Check free space for new file
     int newIndex = findUnusedDE(newDir);
     if (newIndex == -1) {
         free(newDir);
@@ -102,21 +98,22 @@ int moveFile(const char *srcPath, const char *destPath) {
         return -1;
     }
 
-    //Insert file in destination
+    // Copy the file to the destination directory
     struct pp_return_struct newInfo;
     newInfo.parent = newDir;
     newInfo.lastElementIndex = newIndex;
-
     copyFile(&newInfo, file);
 
-    //Remove file in its parent
-    file->fileName[0] = '\0';//set directory unsed 
-    // Write DIR changes back disk
+    // Update modification time of the parent directory
     time_t current_time;
 	time(&current_time);
     ppinfo.parent->modifyDate = current_time;
-    LBAwrite(ppinfo.parent, ppinfo.parent->dir_size, ppinfo.parent->dir_index);
 
+   
+    //write it back to disk 
+    LBAwrite(newInfo.parent, newInfo.parent->dir_size, newInfo.parent->dir_index);
+    // printf("move file using %d blocks to index %d \n"
+            // ,newInfo.parent->dir_size, newInfo.parent->dir_index);
 
     freeppinfo();
     return 0;
@@ -133,7 +130,6 @@ int copyFile(struct pp_return_struct* info, struct dirEntry* src) {
     entry->modifyDate = src->modifyDate;
     entry->isDirectory = src->isDirectory;
     
-    // Write DIR changes back disk
     time_t current_time;
 	time(&current_time);
     ppinfo.parent->modifyDate = current_time;

@@ -384,9 +384,19 @@ int cmd_mv (int argcnt, char *argvec[])
 			return (-1);
 	}
 
-	if (moveFile(src, dest) != 0) {
+	
+	if (fs_isFile (src)){
+		if (moveFile(src, dest) != 0) {
 		printf("Failed the move file: %s\n", src);
-	}
+		}
+
+		if (fs_delete(src) != 0) {
+		printf("Failed the Deleted file: %s\n", src);
+		}
+	}else{
+		printf("mv: cannot stat '%s': No such file or directory\n", src);
+	}	
+
 #endif
 	return 0;
 	}

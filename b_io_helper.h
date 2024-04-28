@@ -20,7 +20,7 @@
 
 int createFile(struct pp_return_struct* info);
 
-int moveFile(const char *srcPath, const char *destPath);
+int moveFile(const char *src, const char *dest);
 
 int copyFile(struct pp_return_struct* info, struct dirEntry* src);
 
