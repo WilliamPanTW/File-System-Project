@@ -225,7 +225,7 @@ int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
     dirEntries[1].modifyDate = parent->modifyDate;
     dirEntries[1].isDirectory = parent->isDirectory;
 	
-	printf("create directory using %d block from %d index \n",location->count,location->start);
+	// printf("create directory using %d block from %d index \n",location->count,location->start);
     // Write amount of block from index get by allocateSpace to directory  entries
     LBAwrite(dirEntries,location->count, location->start);
 

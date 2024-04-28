@@ -284,7 +284,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
     parent->modifyDate = current_time;
     LBAwrite(parent,parent->dir_size,parent->dir_index);
 
-	printf("We have read %d characters from file \n",totalBytesWritten);
+	// printf("We have read %d characters from file \n",totalBytesWritten);
 
 	// Return the total number of bytes actually written
     return totalBytesWritten; 
@@ -432,8 +432,8 @@ int b_read (b_io_fd fd, char * buffer, int count)
 
 	bytesReturned = part1 + part2 + part3;
 
-	printf("We have read %d characters from file %s \n",
-			bytesReturned,fcbArray[fd].file->fileName);
+	// printf("We have read %d characters from file %s \n",
+			// bytesReturned,fcbArray[fd].file->fileName);
 
 	return (bytesReturned);
 	}

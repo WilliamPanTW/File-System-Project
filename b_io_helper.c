@@ -40,8 +40,8 @@ int createFile(struct pp_return_struct* info) {
     entry->createDate = current_time;
     entry->modifyDate = current_time;
     ppinfo.parent->modifyDate = current_time;
-    printf("Create file using %d blocks from index %d \n"
-            ,ppinfo.parent->dir_size, ppinfo.parent->dir_index);
+    // printf("Create file using %d blocks from index %d \n"
+    //         ,ppinfo.parent->dir_size, ppinfo.parent->dir_index);
     // Write changes back disk
     LBAwrite(ppinfo.parent, ppinfo.parent->dir_size, ppinfo.parent->dir_index);
 

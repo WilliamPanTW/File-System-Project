@@ -289,7 +289,7 @@ int fs_rmdir(const char *pathname) {
     entry = &ppinfo.parent[ppinfo.lastElementIndex];
 
     //Free blocks associated with directory
-    printf("Deallocate space using %d block from %d index \n",entry->dir_size,entry->dir_index);
+    // printf("Deallocate space using %d block from %d index \n",entry->dir_size,entry->dir_index);
     deallocateSpace(entry->dir_index, entry->dir_size);
 
     //Set directory as unused 
