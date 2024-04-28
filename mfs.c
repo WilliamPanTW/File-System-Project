@@ -292,7 +292,7 @@ int fs_rmdir(const char *pathname) {
     printf("Deallocate space using %d block from %d index \n",entry->dir_size,entry->dir_index);
     deallocateSpace(entry->dir_index, entry->dir_size);
 
-    //Set directory as unused in its parent
+    //Set directory as unused 
     entry->fileName[0] = '\0'; 
 
     // Write DIR changes back disk

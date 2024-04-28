@@ -27,6 +27,7 @@
 #include "fsLow.h"
 #include "mfs.h"
 #include "mfs_helper.h"
+#include "b_io_helper.h"
 #include "b_io.h"
 
 #define PERMISSIONS (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
@@ -39,7 +40,7 @@
 /****   SET THESE TO 1 WHEN READY TO TEST THAT COMMAND ****/
 #define CMDLS_ON	1
 #define CMDCP_ON	1
-#define CMDMV_ON	0
+#define CMDMV_ON	1
 #define CMDMD_ON	1
 #define CMDRM_ON	1
 #define CMDCP2L_ON	1
@@ -363,8 +364,29 @@ int cmd_cp (int argcnt, char *argvec[])
 int cmd_mv (int argcnt, char *argvec[])
 	{
 #if (CMDMV_ON == 1)				
-	return -99;
 	// **** TODO ****  For you to implement	
+	char * src;
+	char * dest;
+
+	switch (argcnt) {
+		case 2:	//only one name provided
+			src = argvec[1];
+			dest = src;
+			break;
+			
+		case 3:
+			src = argvec[1];
+			dest = argvec[2];
+			break;
+		
+		default:
+			printf("Usage: mv srcfile destfile \n");
+			return (-1);
+	}
+
+	if (moveFile(src, dest) != 0) {
+		printf("Failed the move file: %s\n", src);
+	}
 #endif
 	return 0;
 	}
