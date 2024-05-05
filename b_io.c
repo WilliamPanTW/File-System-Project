@@ -66,7 +66,7 @@ b_io_fd b_getFCB ()
 		{
 		if (fcbArray[i].buf == NULL)
 			{
-			return i;		//Not thread safe (But do not worry about it for this assignment)
+			return i;//Not thread safe (But do not worry about it for this assignment)
 			}
 		}
 	return (-1);  //all in use
@@ -93,7 +93,7 @@ b_io_fd b_open (char * filename, int flags)
 	struct dirEntry* parent = ppinfo.parent;
 	struct dirEntry* entry;
 
-	//remove everything in contents if TRUNC flag is set
+	//Truncate the file and free block associate to zero if TRUNC flag is set
 	if (flags & O_TRUNC) {
 		if (ppinfo.lastElementIndex != -1) {
 			entry = &parent[ppinfo.lastElementIndex];
@@ -387,7 +387,8 @@ int b_read (b_io_fd fd, char * buffer, int count)
 	remainingBytesInMyBuffer = fcbArray[fd].buflen - fcbArray[fd].index;
 
 	// amount have given to user
-	int amountAlreadyDelivered = (fcbArray[fd].currentBlock * B_CHUNK_SIZE) - remainingBytesInMyBuffer;
+	int currentBlock = fcbArray[fd].currentBlock;
+	int amountAlreadyDelivered = (currentBlock * B_CHUNK_SIZE) - remainingBytesInMyBuffer;
 
 	// Limit count to file length to handle End of file
 	// by checking if amount they ask(count) plus already given exceed the file size 

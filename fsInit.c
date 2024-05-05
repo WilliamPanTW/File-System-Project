@@ -161,12 +161,18 @@ int initVolumeControlBlock(uint64_t numberOfBlocks){
 }
 
 int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo) {
-	int dirEntrySize = sizeof(struct dirEntry); // directory entry size (ex.60 bytes)
-    int dirEntry_bytes =  dirEntrySize * entries_number ; // byte needed for Root directory (ex.3000 bytes)
-    int block_num = (dirEntry_bytes + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; //floor operator (ex.6 blocks)
-	int block_byte  = block_num * MINBLOCKSIZE; // The actual size we can allocated by block (ex.3072 bytes)
-	int dirEntryAmount = block_byte / dirEntrySize; // result in less waste  (ex.3072/60 = 51 entries)
-	dirEntry_bytes = dirEntrySize * dirEntryAmount; // update the actual byte dirtory could allocate  (ex.60*51= 3060)
+	// directory entry size (ex.60 bytes)
+	int dirEntrySize = sizeof(struct dirEntry); 
+	// byte needed for Root directory (ex.3000 bytes)
+    int dirEntry_bytes =  dirEntrySize * entries_number ; 
+	//floor operator (ex.6 blocks)
+    int block_num = (dirEntry_bytes + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; 
+	// The actual size we can allocated by block (ex.3072 bytes)
+	int block_byte  = block_num * MINBLOCKSIZE; 
+	// result in less waste  (ex.3072/60 = 51 entries)
+	int dirEntryAmount = block_byte / dirEntrySize; 
+	// update the actual byte dirtory could allocate  (ex.60*51= 3060)
+	dirEntry_bytes = dirEntrySize * dirEntryAmount; 
 	
 	//encapsulate the functionality for other freespace system  
 	int min_block_count=block_num;

@@ -91,7 +91,7 @@ fdDir * fs_opendir(const char *pathname);
 char * fs_getcwd(char *pathbuffer, size_t size);
 int fs_setcwd(char *pathname);   //linux chdir
 int fs_isFile(char * filename);	//return 1 if file, 0 otherwise
-int fs_isDir(char * pathname);		//return 1 if directory, 0 otherwise
+int fs_isDir(char * pathname);	//return 1 if directory, 0 otherwise
 int fs_delete(char* filename);	//removes a file
 
 

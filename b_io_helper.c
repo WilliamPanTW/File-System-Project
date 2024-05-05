@@ -70,7 +70,7 @@ int moveFile(const char *src, const char *dest) {
     }
 
     struct dirEntry* newDir;
-    //If the pare path index equal to specified root from parse path function
+    //If the parse path index equal to specified root from parse path function
     if (ppinfo.lastElementIndex == -1) {
         // And does not have a name 
         if (ppinfo.lastElementName != NULL) {

@@ -134,12 +134,15 @@ int isDirEntryEmpty(struct dirEntry* dir) {
 
 
 void deallocateSpace(uint64_t startBlock, uint64_t numberOfBlocks) {
+    //check if the range is valid 
     if (startBlock < 0 || startBlock >= VCB->block_size) {
         return;
     }
+    //Clear specified range of bit by iterated amount of size
     for (int i = 0; i < numberOfBlocks; i++) {
         clear_bit(fsmap, startBlock + i);
     }
+    //Write the updated bitmap system back to disk 
     LBAwrite(fsmap, VCB->bit_map_size, VCB->bit_map_index);
 }
 
@@ -207,7 +210,7 @@ struct dirEntry* loadDir(struct dirEntry* entry) {
         return NULL;
     }
 
-    // printf("loaded directory using %d blocks starting at block %d\n", blocksNeeded, startBlock);
+    // printf("loaded directory using %d blocks starting at block %d\n",blocksNeeded,startBlock);
     int result = LBAread(loadDir, blocksNeeded, startBlock);
     if (result != blocksNeeded) {
         return NULL;

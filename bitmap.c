@@ -123,7 +123,7 @@ struct extent* allocateSpace(uint64_t block_amount, uint64_t min_block_count) {
 
 int initFreeSpace(uint64_t block_amount) {
 	int bytesNeeded = block_amount / 8; //1 bit per block (smallest addresable Byte)
-	int bitmap_needed_block = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; // floor operation 
+	int bitmap_needed_block = (bytesNeeded + (MINBLOCKSIZE - 1)) / MINBLOCKSIZE; //floor operation 
 	// printf("\n checking : %d \n",bitmap_needed_block); //5 
 
     fsmap = malloc(bitmap_needed_block * MINBLOCKSIZE); //bitmap space (5*512=2560 bytes)
