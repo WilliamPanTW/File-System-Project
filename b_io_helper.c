@@ -1,7 +1,7 @@
 /**************************************************************
 * Class::  CSC-415-01 Spring 2024
-* Name:: Pan William
-* Student IDs:: 922867228
+* Name:: John Cuevas, Michael Abolencia , Pan William , Tina Chou
+* Student IDs:: 920542932, 917581956, 922867228 , 922911207
 * GitHub-Name:: WilliamPanTW
 * Group-Name:: JMWT
 * Project:: Basic File System
@@ -29,19 +29,30 @@
 ****************************************************/
 
 int createFile(struct pp_return_struct* info) {
+    // Get the parent directory entry where the new file will be created
     struct dirEntry* entry = &ppinfo.parent[ppinfo.lastElementIndex];
+
+    // Copy the name of the new file to the directory entry
     strncpy(entry->fileName, ppinfo.lastElementName, 256);
 
+    // Initialize size and type of the new file
     entry->dir_size = 0;
     entry->isDirectory = 0;
 
+    // Get current time
     time_t current_time;
 	time(&current_time);
     entry->createDate = current_time;
     entry->modifyDate = current_time;
+
+    // Update parent directory's modification date
     ppinfo.parent->modifyDate = current_time;
+
+
     // printf("Create file using %d blocks from index %d \n"
     //         ,ppinfo.parent->dir_size, ppinfo.parent->dir_index);
+
+
     // Write changes back disk
     LBAwrite(ppinfo.parent, ppinfo.parent->dir_size, ppinfo.parent->dir_index);
 
@@ -59,15 +70,18 @@ int moveFile(const char *src, const char *dest) {
     }
 
     struct dirEntry* newDir;
-    // Check if the destination directory exists
+    //If the pare path index equal to specified root from parse path function
     if (ppinfo.lastElementIndex == -1) {
+        // And does not have a name 
         if (ppinfo.lastElementName != NULL) {
             freeLastElementName();
             freePathParent();
             return -1;
         }
+        //Then root Load directory entry itself 
         newDir = loadDir(ppinfo.parent);
     } else {
+        // Load directory entry for specified parent index 
         newDir = loadDir(&ppinfo.parent[ppinfo.lastElementIndex]);
     }
 
@@ -128,19 +142,25 @@ int moveFile(const char *src, const char *dest) {
 }
 
 int copyFile(struct pp_return_struct* info, struct dirEntry* src) {
+    // Get the parent directory entry where the file will be copied
     struct dirEntry* entry = &info->parent[info->lastElementIndex];
 
+    // Copy the file name from source to destination directory entry
     strncpy(entry->fileName, src->fileName, 256);
 
+    // Copy other attributes from source to destination directory entry
     entry->dir_size = src->dir_size;
-    
     entry->createDate = src->createDate;
     entry->modifyDate = src->modifyDate;
     entry->isDirectory = src->isDirectory;
     
+    // Get current time
     time_t current_time;
 	time(&current_time);
+    // Update parent directory's modification date
     ppinfo.parent->modifyDate = current_time;
+
+    // Write the parent directory entry to disk
     LBAwrite(ppinfo.parent, ppinfo.parent->dir_size, ppinfo.parent->dir_index);
 
     return 0;

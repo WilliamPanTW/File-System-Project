@@ -1,7 +1,7 @@
 /**************************************************************
 * Class::  CSC-415-01 Spring 2024
-* Name:: Pan William
-* Student IDs:: 922867228
+* Name:: John Cuevas, Michael Abolencia , Pan William , Tina Chou
+* Student IDs:: 920542932, 917581956, 922867228 , 922911207
 * GitHub-Name:: WilliamPanTW
 * Group-Name:: JMWT
 * Project:: Basic File System
@@ -26,7 +26,7 @@
 /****************************************************************************************
 *  displayFiles for use by ls command
 ****************************************************************************************/
-
+//provide the caller with information about each file as it iterated through directory 
 struct fs_diriteminfo *fs_readdir(fdDir *dirp) {
     // Check if directory stream handle is valid
     if (!dirp) {

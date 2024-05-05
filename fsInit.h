@@ -1,7 +1,7 @@
 /**************************************************************
 * Class::  CSC-415-01 Spring 2024
-* Name:: Pan William
-* Student IDs:: 922867228
+* Name:: John Cuevas, Michael Abolencia , Pan William , Tina Chou
+* Student IDs:: 920542932, 917581956, 922867228 , 922911207
 * GitHub-Name:: WilliamPanTW
 * Group-Name:: JMWT
 * Project:: Basic File System
@@ -55,10 +55,6 @@ struct vcb
 	uint64_t root_dir_size;		//Total number of the root directory 
 } ;
 
-	void set_bit(char* bitmap, int position);
-	int get_bit(char* bitmap, int position);
-	void clear_bit(char* bitmap, int position);
-
 	void set_Dir(
 		char *name,
 		int index,
@@ -68,17 +64,14 @@ struct vcb
 	);
 	
 	//**************************Helper function**************************//
+	//This function will be called if the volume control block signature is initial
 	int loadFreeSpace(uint64_t numberOfBlocks);
 	int loadRootDirectory(uint64_t numberOfBlocks);
 
+	// If it volume has not initial yet then we will run this function 
 	int initVolumeControlBlock(uint64_t numberOfBlocks);
+	
 	int createDirectory(uint64_t entries_number, struct pp_return_struct* ppinfo);
-
-	void set_bit(char* bitmap, int position);
-	int get_bit(char* bitmap, int position);
-	void clear_bit(char* bitmap, int position);
-
-
 
 #endif
 

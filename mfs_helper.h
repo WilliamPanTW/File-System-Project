@@ -1,7 +1,7 @@
 /**************************************************************
 * Class::  CSC-415-01 Spring 2024
-* Name:: Pan William
-* Student IDs:: 922867228
+* Name:: John Cuevas, Michael Abolencia , Pan William , Tina Chou
+* Student IDs:: 920542932, 917581956, 922867228 , 922911207
 * GitHub-Name:: WilliamPanTW
 * Group-Name:: JMWT
 * Project:: Basic File System
@@ -24,10 +24,13 @@
 // int cmd_pwd (int argcnt, char *argvec[]); //dummy check
 
 //****************************Display file for md ****************************
+//provide the caller with information about each file as it iterated through directory 
 struct fs_diriteminfo *fs_readdir(fdDir *dirp);
 
+//retrieve file status information
 int fs_stat(const char *path, struct fs_stat *buf);
 
+//Free associated directory entries stream
 int fs_closedir(fdDir *dirp);
 
 //****************************Rm command ****************************
